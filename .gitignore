@@ -16,3 +16,11 @@ venv/
 
 # Model files
 models/*.pkl
+
+# Ignore data files
+data/raw/*
+data/processed/*
+
+# But keep the folder structure
+!data/raw/
+!data/processed/
