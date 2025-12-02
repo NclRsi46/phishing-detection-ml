@@ -37,8 +37,8 @@ phishing-detection-ml/
 │   └── predict.py
 ├── requirements.txt
 └── .gitignore
-
-Usage
+```
+## Usage
 
 This section explains how to prepare the dataset, preprocess it, train the machine learning model, and evaluate the results. All commands should be run from the project’s root directory.
 
