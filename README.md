@@ -45,7 +45,7 @@ This section explains how to prepare the dataset, preprocess it, train the machi
 1. Set Up the Environment
 
 Clone the repository and create a Python virtual environment:
-
+```text
 git clone <your-repository-url>
 cd phishing-detection-ml
 
@@ -54,7 +54,7 @@ source venv/bin/activate     # macOS/Linux
 venv\Scripts\activate        # Windows
 
 pip install -r requirements.txt
-
+```
 2. Add Raw Data Files
 
 Place the required files into:
