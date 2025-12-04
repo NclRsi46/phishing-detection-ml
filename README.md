@@ -129,10 +129,10 @@ label
 Train the Random Forest classifier:
 ```bash
 python src/train.py
-
+```
 
 This step loads the processed dataset, performs a train/test split, trains the model, prints evaluation metrics, and saves the trained model to:
-
+```bash
 models/phishing_model.pkl
 ```
 6. Evaluate the Model
