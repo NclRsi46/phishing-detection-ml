@@ -2,8 +2,7 @@
 
 This project is part of the CIT251/CYB201 course. The goal is to detect phishing URLs using machine learning techniques and propose strategies to help prevent phishing attacks.
 
-## Team
-- **Nicolas Rossi** (Project Manager)
+**Nicolas Rossi**
 
 ## Dataset
 We use phishing URLs obtained from the PhishTank “Verified Online” CSV feed, combined with a curated list of legitimate URLs.  
