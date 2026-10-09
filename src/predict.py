@@ -1,92 +1,59 @@
 """
 predict.py
 
-Command-line tool to predict whether a given URL is phishing or legitimate
-using the trained Random Forest model.
+Command-line tool that scores a URL with a trained model. Only the domain
+name is scored; the path and query are ignored, same as in training.
 
 Usage:
-    python src/predict.py "https://example.com"
+    python src/predict.py "https://example.com/login"
+    python src/predict.py --model models/host_random_forest.pkl "https://example.com"
 """
 
+import argparse
 import os
 import sys
-from typing import Dict
 
 import joblib
 import pandas as pd
 
-MODEL_PATH = "models/phishing_model.pkl"
+from features import extract_features, hostname, registered_domain
+
+DEFAULT_MODEL = "models/domain_random_forest.pkl"
 
 
-def extract_features_from_url(url: str) -> Dict[str, int]:
-    """
-    Extract the same URL-based features used during training.
-    These must match the features in preprocess.py.
-    """
-    if url is None:
-        url = ""
-
-    url_str = str(url)
-
-    features = {
-        "url_length": len(url_str),
-        "num_dots": url_str.count("."),
-        "num_hyphens": url_str.count("-"),
-        "num_slashes": url_str.count("/"),
-        "num_question_marks": url_str.count("?"),
-        "num_equals": url_str.count("="),
-        "has_at_symbol": 1 if "@" in url_str else 0,
-        "uses_https": 1 if url_str.lower().startswith("https") else 0,
-    }
-
-    return features
-
-
-def load_model(path: str):
+def load_model(path: str) -> dict:
     if not os.path.exists(path):
-        raise FileNotFoundError(
-            f"Model file not found at '{path}'. "
-            f"Make sure you have run src/train.py first."
-        )
+        raise FileNotFoundError(f"Model file not found at '{path}'. Run src/train.py first.")
     return joblib.load(path)
 
 
+def score(bundle: dict, url: str) -> float:
+    """Probability that the URL is phishing."""
+    # Column order comes from the saved model, not from this file, so a
+    # change to features.py can't silently reorder the model's inputs.
+    features = extract_features(url, bundle["level"])
+    X = pd.DataFrame([features], columns=bundle["features"])
+    return float(bundle["model"].predict_proba(X)[0][1])
+
+
 def main():
-    # Expect exactly one argument: the URL
-    if len(sys.argv) != 2:
-        print("Usage:")
-        print('  python src/predict.py "https://example.com"')
+    parser = argparse.ArgumentParser(description="Score a URL as phishing or legitimate.")
+    parser.add_argument("url")
+    parser.add_argument("--model", default=DEFAULT_MODEL)
+    args = parser.parse_args()
+
+    bundle = load_model(args.model)
+    level = bundle["level"]
+    scored = registered_domain(args.url) if level == "domain" else hostname(args.url)
+    if not scored:
+        print(f"Could not find a valid domain in: {args.url}")
         sys.exit(1)
 
-    url = sys.argv[1]
-
-    # Load trained model
-    model = load_model(MODEL_PATH)
-
-    # Extract features
-    features = extract_features_from_url(url)
-    X = pd.DataFrame([features])  # single-row DataFrame
-
-    # Predict
-    pred = model.predict(X)[0]
-
-    # Try to get probability if supported
-    proba_str = ""
-    if hasattr(model, "predict_proba"):
-        proba = model.predict_proba(X)[0]
-        prob_legit = proba[0]  # class 0
-        prob_phish = proba[1]  # class 1
-        proba_str = (
-            "\nEstimated probabilities:\n"
-            f"  Legitimate (0): {prob_legit:.3f}\n"
-            f"  Phishing   (1): {prob_phish:.3f}"
-        )
-
-    label_map = {0: "Legitimate (0)", 1: "Phishing (1)"}
-    label_text = label_map.get(pred, str(pred))
-
-    print(f"URL: {url}")
-    print(f"Prediction: {label_text}{proba_str}")
+    p = score(bundle, args.url)
+    print(f"URL:          {args.url}")
+    print(f"Scored:       {scored} ({level} level, path and query ignored)")
+    print(f"P(phishing):  {p:.3f}")
+    print(f"Prediction:   {'Phishing' if p > 0.5 else 'Legitimate'}")
 
 
 if __name__ == "__main__":
