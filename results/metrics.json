@@ -1,94 +1,94 @@
 {
   "domain": {
-    "train_rows": 8024,
-    "test_rows": 2006,
+    "train_rows": 7990,
+    "test_rows": 2040,
     "models": {
       "logistic_regression": {
-        "precision": 0.6819,
-        "recall": 0.53,
-        "f1": 0.5965,
-        "false_positive_rate": 0.2375,
-        "accuracy": 0.6486,
+        "precision": 0.7201,
+        "recall": 0.5692,
+        "f1": 0.6358,
+        "false_positive_rate": 0.2239,
+        "accuracy": 0.6721,
         "confusion_matrix": {
-          "tn": 780,
-          "fp": 243,
-          "fn": 462,
-          "tp": 521
+          "tn": 787,
+          "fp": 227,
+          "fn": 442,
+          "tp": 584
         }
       },
       "random_forest": {
-        "precision": 0.6602,
-        "recall": 0.5575,
-        "f1": 0.6045,
-        "false_positive_rate": 0.2757,
-        "accuracy": 0.6426,
+        "precision": 0.6903,
+        "recall": 0.578,
+        "f1": 0.6292,
+        "false_positive_rate": 0.2623,
+        "accuracy": 0.6574,
         "confusion_matrix": {
-          "tn": 741,
-          "fp": 282,
-          "fn": 435,
-          "tp": 548
+          "tn": 748,
+          "fp": 266,
+          "fn": 433,
+          "tp": 593
         },
         "feature_importance": {
-          "entropy": 0.385,
-          "length": 0.23,
-          "num_hyphens": 0.11,
-          "tld_other": 0.072,
-          "digit_ratio": 0.054,
-          "num_digits": 0.053,
-          "tld_country": 0.033,
-          "tld_com": 0.026,
+          "entropy": 0.388,
+          "length": 0.227,
+          "num_hyphens": 0.114,
+          "tld_other": 0.067,
+          "digit_ratio": 0.058,
+          "num_digits": 0.054,
+          "tld_country": 0.03,
+          "tld_com": 0.023,
           "tld_legacy": 0.02,
-          "has_lure_word": 0.007,
+          "has_lure_word": 0.008,
           "is_ip": 0.004,
           "is_punycode": 0.003,
-          "has_brand_word": 0.002
+          "has_brand_word": 0.003
         }
       }
     }
   },
   "host": {
-    "train_rows": 8789,
-    "test_rows": 2199,
+    "train_rows": 8055,
+    "test_rows": 1975,
     "models": {
       "logistic_regression": {
-        "precision": 0.7293,
-        "recall": 0.6307,
-        "f1": 0.6764,
-        "false_positive_rate": 0.2352,
-        "accuracy": 0.6976,
+        "precision": 0.7135,
+        "recall": 0.63,
+        "f1": 0.6691,
+        "false_positive_rate": 0.2637,
+        "accuracy": 0.682,
         "confusion_matrix": {
-          "tn": 839,
-          "fp": 258,
-          "fn": 407,
-          "tp": 695
+          "tn": 712,
+          "fp": 255,
+          "fn": 373,
+          "tp": 635
         }
       },
       "random_forest": {
-        "precision": 0.7258,
-        "recall": 0.598,
-        "f1": 0.6557,
-        "false_positive_rate": 0.227,
-        "accuracy": 0.6853,
+        "precision": 0.6898,
+        "recall": 0.5913,
+        "f1": 0.6368,
+        "false_positive_rate": 0.2771,
+        "accuracy": 0.6557,
         "confusion_matrix": {
-          "tn": 848,
-          "fp": 249,
-          "fn": 443,
-          "tp": 659
+          "tn": 699,
+          "fp": 268,
+          "fn": 412,
+          "tp": 596
         },
         "feature_importance": {
-          "entropy": 0.385,
-          "length": 0.232,
-          "num_hyphens": 0.126,
-          "subdomain_depth": 0.052,
-          "digit_ratio": 0.049,
+          "entropy": 0.378,
+          "length": 0.227,
+          "num_hyphens": 0.12,
+          "subdomain_depth": 0.064,
+          "digit_ratio": 0.05,
           "tld_other": 0.047,
-          "num_digits": 0.044,
-          "tld_legacy": 0.018,
-          "tld_com": 0.018,
-          "tld_country": 0.015,
-          "has_lure_word": 0.009,
+          "num_digits": 0.043,
+          "tld_com": 0.022,
+          "tld_legacy": 0.019,
+          "tld_country": 0.016,
+          "has_lure_word": 0.008,
+          "is_ip": 0.003,
           "has_brand_word": 0.003,
-          "is_ip": 0.002,
           "is_punycode": 0.0
         }
       }
