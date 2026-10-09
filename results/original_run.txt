@@ -1,0 +1,50 @@
+# Original pipeline (last commit on main before the leakage fix), rerun 2026-10-09
+Loading Tranco list...
+Total domains loaded: 1000000
+Saved 1000000 legitimate URLs → data/raw/benign_urls.csv
+=== Building labeled phishing dataset ===
+Loaded 47986 phishing URLs from verified_online.csv
+Loaded 1000000 benign URLs from benign_urls.csv
+
+Final dataset saved to: data/raw/phishing_raw.csv
+Total rows: 95972
+label
+0    47986
+1    47986
+Name: count, dtype: int64
+Done.
+Loading raw dataset...
+Raw shape: (95972, 2)
+Engineering features...
+Processed shape: (95972, 9)
+Saving processed dataset...
+Processed data saved to data/processed/phishing_processed.csv
+Done!
+Loading processed data...
+Using feature columns: ['url_length', 'num_dots', 'num_hyphens', 'num_slashes', 'num_question_marks', 'num_equals', 'has_at_symbol', 'uses_https']
+Training Random Forest model...
+Evaluating model on test set...
+              precision    recall  f1-score   support
+
+           0       0.99      1.00      0.99      9598
+           1       1.00      0.99      0.99      9597
+
+    accuracy                           0.99     19195
+   macro avg       0.99      0.99      0.99     19195
+weighted avg       0.99      0.99      0.99     19195
+
+Model saved to: models/phishing_model.pkl
+
+# Exact held-out metrics: acc=0.9946 prec=0.9980 rec=0.9912 FPR=0.0020
+# Feature importance: {'num_slashes': np.float64(0.603), 'url_length': np.float64(0.171), 'num_dots': np.float64(0.143), 'num_hyphens': np.float64(0.042), 'num_question_marks': np.float64(0.017), 'uses_https': np.float64(0.016), 'num_equals': np.float64(0.008), 'has_at_symbol': np.float64(0.0)}
+# Shape table (fraction of rows):
+       https  has_path  has_query
+label                            
+0      1.000      0.00      0.000
+1      0.953      0.67      0.209
+# Sanity URLs:
+P(phish)=1.00  https://www.amazon.com/gp/your-account/order-history?ref_=ya_d_c_yo
+P(phish)=1.00  https://en.wikipedia.org/wiki/Phishing
+P(phish)=1.00  https://www.chase.com/personal/checking
+P(phish)=0.99  http://paypal.com
+P(phish)=0.11  https://paypal-login-secure.com
