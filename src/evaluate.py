@@ -1,53 +1,100 @@
 """
 evaluate.py
 
-Loads the trained phishing detection model and evaluates it on the full
-processed dataset (data/processed/phishing_processed.csv).
+Scores every trained model on its held-out test split only (never on rows
+it was trained on). Reports precision, recall, F1, and false positive rate.
 
-This should mirror the same feature handling as train.py:
-- Uses only numeric feature columns
-- Target column: 'label'
+Writes results/metrics.json and results/confusion_{level}_{model}.png.
 """
 
+import json
 import os
-import joblib
-import pandas as pd
-from sklearn.metrics import classification_report
 
-MODEL_PATH = "models/phishing_model.pkl"
-PROCESSED_DATA = "data/processed/phishing_processed.csv"
-TARGET_COL = "label"  # same as in train.py
+import joblib
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from sklearn.metrics import (
+    ConfusionMatrixDisplay,
+    accuracy_score,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+)
+
+PROCESSED_DIR = "data/processed"
+MODEL_DIR = "models"
+RESULTS_DIR = "results"
+LEVELS = ["domain", "host"]
+MODEL_NAMES = ["logistic_regression", "random_forest"]
+
+
+def evaluate(bundle: dict, test: pd.DataFrame) -> dict:
+    model = bundle["model"]
+    y_true = test["label"]
+    y_pred = model.predict(test[bundle["features"]])
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
+
+    metrics = {
+        "precision": round(precision_score(y_true, y_pred), 4),
+        "recall": round(recall_score(y_true, y_pred), 4),
+        "f1": round(f1_score(y_true, y_pred), 4),
+        "false_positive_rate": round(fp / (fp + tn), 4),
+        "accuracy": round(accuracy_score(y_true, y_pred), 4),
+        "confusion_matrix": {"tn": int(tn), "fp": int(fp), "fn": int(fn), "tp": int(tp)},
+    }
+
+    if hasattr(model, "feature_importances_"):
+        ranked = sorted(zip(bundle["features"], model.feature_importances_), key=lambda t: -t[1])
+        metrics["feature_importance"] = {name: round(float(v), 3) for name, v in ranked}
+
+    return metrics
+
+
+def save_confusion_matrix(metrics: dict, level: str, name: str) -> None:
+    cm = metrics["confusion_matrix"]
+    matrix = np.array([[cm["tn"], cm["fp"]], [cm["fn"], cm["tp"]]])
+    disp = ConfusionMatrixDisplay(matrix, display_labels=["benign", "phishing"])
+    disp.plot(cmap="Blues", values_format="d", colorbar=False)
+    disp.ax_.set_title(f"{level} level, {name.replace('_', ' ')}")
+    plt.tight_layout()
+    plt.savefig(os.path.join(RESULTS_DIR, f"confusion_{level}_{name}.png"), dpi=120)
+    plt.close()
 
 
 def main():
-    # Check that model and data exist
-    if not os.path.exists(MODEL_PATH):
-        raise FileNotFoundError(f"Model file not found at {MODEL_PATH}. Train the model first.")
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    results = {}
 
-    if not os.path.exists(PROCESSED_DATA):
-        raise FileNotFoundError(f"Processed dataset not found at {PROCESSED_DATA}. Run preprocess.py first.")
+    for level in LEVELS:
+        test_path = os.path.join(PROCESSED_DIR, f"{level}_test.csv")
+        train_path = os.path.join(PROCESSED_DIR, f"{level}_train.csv")
+        if not os.path.exists(test_path):
+            print(f"{test_path} not found, skipping.")
+            continue
 
-    print("Loading model and processed dataset...")
-    model = joblib.load(MODEL_PATH)
-    df = pd.read_csv(PROCESSED_DATA)
+        test = pd.read_csv(test_path)
+        train_rows = len(pd.read_csv(train_path, usecols=["label"]))
+        results[level] = {"train_rows": train_rows, "test_rows": len(test), "models": {}}
 
-    if TARGET_COL not in df.columns:
-        raise ValueError(
-            f"Target column '{TARGET_COL}' missing from dataset. "
-            f"Columns: {df.columns.tolist()}"
-        )
+        for name in MODEL_NAMES:
+            bundle = joblib.load(os.path.join(MODEL_DIR, f"{level}_{name}.pkl"))
+            metrics = evaluate(bundle, test)
+            results[level]["models"][name] = metrics
+            save_confusion_matrix(metrics, level, name)
 
-    # Split features and labels
-    X = df.drop(columns=[TARGET_COL])
-    y = df[TARGET_COL]
+            print(
+                f"{level:6} {name:20} precision {metrics['precision']:.4f}  recall {metrics['recall']:.4f}  "
+                f"F1 {metrics['f1']:.4f}  FPR {metrics['false_positive_rate']:.4f}"
+            )
 
-    # Use only numeric feature columns (same as train.py)
-    X = X.select_dtypes(include="number")
-    print(f"Using feature columns for evaluation: {X.columns.tolist()}")
-
-    print("Evaluating model on the full processed dataset...")
-    preds = model.predict(X)
-    print(classification_report(y, preds))
+    with open(os.path.join(RESULTS_DIR, "metrics.json"), "w") as f:
+        json.dump(results, f, indent=2)
+    print(f"Saved {RESULTS_DIR}/metrics.json")
 
 
 if __name__ == "__main__":
