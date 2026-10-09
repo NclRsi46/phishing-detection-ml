@@ -1,0 +1,78 @@
+{
+  "domain": {
+    "logistic_regression": {
+      "precision": {
+        "mean": 0.7104,
+        "std": 0.023
+      },
+      "recall": {
+        "mean": 0.5406,
+        "std": 0.0157
+      },
+      "f1": {
+        "mean": 0.6138,
+        "std": 0.0159
+      },
+      "false_positive_rate": {
+        "mean": 0.2238,
+        "std": 0.0132
+      }
+    },
+    "random_forest": {
+      "precision": {
+        "mean": 0.6844,
+        "std": 0.0218
+      },
+      "recall": {
+        "mean": 0.5641,
+        "std": 0.018
+      },
+      "f1": {
+        "mean": 0.6183,
+        "std": 0.0168
+      },
+      "false_positive_rate": {
+        "mean": 0.2643,
+        "std": 0.016
+      }
+    }
+  },
+  "host": {
+    "logistic_regression": {
+      "precision": {
+        "mean": 0.7102,
+        "std": 0.0258
+      },
+      "recall": {
+        "mean": 0.6327,
+        "std": 0.0297
+      },
+      "f1": {
+        "mean": 0.6689,
+        "std": 0.0243
+      },
+      "false_positive_rate": {
+        "mean": 0.2544,
+        "std": 0.0141
+      }
+    },
+    "random_forest": {
+      "precision": {
+        "mean": 0.6924,
+        "std": 0.0176
+      },
+      "recall": {
+        "mean": 0.5911,
+        "std": 0.0218
+      },
+      "f1": {
+        "mean": 0.6375,
+        "std": 0.0161
+      },
+      "false_positive_rate": {
+        "mean": 0.2593,
+        "std": 0.0134
+      }
+    }
+  }
+}
