@@ -63,6 +63,13 @@ def balance(phish: pd.DataFrame, benign: pd.DataFrame) -> pd.DataFrame:
     return combined.sample(frac=1.0, random_state=SEED)[["url", "host", "domain", "label"]]
 
 
+def one_host_per_domain(df: pd.DataFrame) -> pd.DataFrame:
+    # Some domains have many hostnames: CDNs on the benign side, site
+    # builders like daftpage.com on the phishing side. Keeping one random
+    # host per domain on both sides stops a few domains from dominating.
+    return df.sample(frac=1.0, random_state=SEED).drop_duplicates("domain")
+
+
 def build_domain_dataset(phish: pd.DataFrame, tranco: pd.DataFrame) -> pd.DataFrame:
     print("\n== Domain dataset (PhishTank vs Tranco) ==")
     tranco_domains = set(tranco["domain"])
@@ -73,9 +80,10 @@ def build_domain_dataset(phish: pd.DataFrame, tranco: pd.DataFrame) -> pd.DataFr
     # bit.ly). Keeping them would teach the model that google.com is phishing.
     p = step(p, p[~p["domain"].isin(tranco_domains)], "registered domain is in Tranco")
 
+    # No PhishTank-overlap step on this side: phishing domains in Tranco were
+    # already dropped above, so there is nothing left to remove.
     print("Benign:")
     b = step(tranco, tranco.drop_duplicates("domain"), "duplicate registered domain")
-    b = step(b, b[~b["domain"].isin(set(p["domain"]))], "registered domain is in PhishTank")
 
     return balance(p, b)
 
@@ -87,16 +95,13 @@ def build_host_dataset(phish: pd.DataFrame, tranco: pd.DataFrame, umbrella: pd.D
     print("Phishing:")
     p = step(phish, phish.drop_duplicates("host"), "duplicate hostname")
     p = step(p, p[~p["domain"].isin(tranco_domains)], "registered domain is in Tranco")
+    p = step(p, one_host_per_domain(p), "extra hostnames of the same registered domain")
 
     print("Benign:")
     b = step(umbrella, umbrella.drop_duplicates("host"), "duplicate hostname")
     # Umbrella ranks by DNS traffic, so it also contains phishing domains.
     b = step(b, b[~b["domain"].isin(set(p["domain"]))], "registered domain is in PhishTank")
-    # A handful of domains (CDNs, Google, Microsoft) have thousands of
-    # hostnames each. One random host per domain keeps them from dominating
-    # and matches the phishing side, which is about one host per domain.
-    one_per_domain = b.sample(frac=1.0, random_state=SEED).drop_duplicates("domain")
-    b = step(b, one_per_domain, "extra hostnames of the same registered domain")
+    b = step(b, one_host_per_domain(b), "extra hostnames of the same registered domain")
 
     return balance(p, b)
 
