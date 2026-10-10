@@ -15,24 +15,28 @@ import json
 import os
 
 import pandas as pd
-from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
+from sklearn.metrics import average_precision_score, confusion_matrix, f1_score, precision_score, recall_score
 from sklearn.model_selection import GroupShuffleSplit
 
+from evaluate import OPERATING_POINTS, recall_at_fpr
 from features import feature_names
 from preprocess import LEVELS, PROCESSED_DIR, TEST_SIZE, campaign_key, featurize
 from train import make_models
 
 RESULTS_DIR = "results"
 N_SPLITS = 10
+METRICS = ["precision", "recall", "f1", "false_positive_rate", *OPERATING_POINTS, "average_precision"]
 
 
-def score(y_true, y_pred) -> dict:
+def score(y_true, y_pred, scores) -> dict:
     tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
     return {
         "precision": precision_score(y_true, y_pred),
         "recall": recall_score(y_true, y_pred),
         "f1": f1_score(y_true, y_pred),
         "false_positive_rate": fp / (fp + tn),
+        **{key: recall_at_fpr(y_true, scores, target) for key, target in OPERATING_POINTS.items()},
+        "average_precision": average_precision_score(y_true, scores),
     }
 
 
@@ -54,13 +58,14 @@ def main():
         for train_idx, test_idx in splitter.split(X, y, groups=groups):
             for name, model in make_models().items():
                 model.fit(X.iloc[train_idx], y.iloc[train_idx])
-                metrics = score(y.iloc[test_idx], model.predict(X.iloc[test_idx]))
+                X_test = X.iloc[test_idx]
+                metrics = score(y.iloc[test_idx], model.predict(X_test), model.predict_proba(X_test)[:, 1])
                 rows.append({"model": name, **metrics})
 
         summary = pd.DataFrame(rows).groupby("model").agg(["mean", "std"]).round(4)
         results[level] = {
             model: {metric: {"mean": summary.loc[model, (metric, "mean")], "std": summary.loc[model, (metric, "std")]}
-                    for metric in ("precision", "recall", "f1", "false_positive_rate")}
+                    for metric in METRICS}
             for model in summary.index
         }
 
