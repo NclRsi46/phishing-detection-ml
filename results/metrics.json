@@ -1,0 +1,97 @@
+{
+  "domain": {
+    "train_rows": 7990,
+    "test_rows": 2040,
+    "models": {
+      "logistic_regression": {
+        "precision": 0.7201,
+        "recall": 0.5692,
+        "f1": 0.6358,
+        "false_positive_rate": 0.2239,
+        "accuracy": 0.6721,
+        "confusion_matrix": {
+          "tn": 787,
+          "fp": 227,
+          "fn": 442,
+          "tp": 584
+        }
+      },
+      "random_forest": {
+        "precision": 0.6903,
+        "recall": 0.578,
+        "f1": 0.6292,
+        "false_positive_rate": 0.2623,
+        "accuracy": 0.6574,
+        "confusion_matrix": {
+          "tn": 748,
+          "fp": 266,
+          "fn": 433,
+          "tp": 593
+        },
+        "feature_importance": {
+          "entropy": 0.388,
+          "length": 0.227,
+          "num_hyphens": 0.114,
+          "tld_other": 0.067,
+          "digit_ratio": 0.058,
+          "num_digits": 0.054,
+          "tld_country": 0.03,
+          "tld_com": 0.023,
+          "tld_legacy": 0.02,
+          "has_lure_word": 0.008,
+          "is_ip": 0.004,
+          "is_punycode": 0.003,
+          "has_brand_word": 0.003
+        }
+      }
+    }
+  },
+  "host": {
+    "train_rows": 8055,
+    "test_rows": 1975,
+    "models": {
+      "logistic_regression": {
+        "precision": 0.7135,
+        "recall": 0.63,
+        "f1": 0.6691,
+        "false_positive_rate": 0.2637,
+        "accuracy": 0.682,
+        "confusion_matrix": {
+          "tn": 712,
+          "fp": 255,
+          "fn": 373,
+          "tp": 635
+        }
+      },
+      "random_forest": {
+        "precision": 0.6898,
+        "recall": 0.5913,
+        "f1": 0.6368,
+        "false_positive_rate": 0.2771,
+        "accuracy": 0.6557,
+        "confusion_matrix": {
+          "tn": 699,
+          "fp": 268,
+          "fn": 412,
+          "tp": 596
+        },
+        "feature_importance": {
+          "entropy": 0.378,
+          "length": 0.227,
+          "num_hyphens": 0.12,
+          "subdomain_depth": 0.064,
+          "digit_ratio": 0.05,
+          "tld_other": 0.047,
+          "num_digits": 0.043,
+          "tld_com": 0.022,
+          "tld_legacy": 0.019,
+          "tld_country": 0.016,
+          "has_lure_word": 0.008,
+          "is_ip": 0.003,
+          "has_brand_word": 0.003,
+          "is_punycode": 0.0
+        }
+      }
+    }
+  }
+}
