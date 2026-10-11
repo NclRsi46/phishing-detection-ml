@@ -30,7 +30,10 @@ def make_models() -> dict:
         # Features are on different scales (length vs ratios), so the linear
         # model needs scaling. The forest doesn't.
         "logistic_regression": make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000)),
-        "random_forest": RandomForestClassifier(n_estimators=100, random_state=SEED, n_jobs=-1),
+        # One job: in parallel, the trees' scores are summed in a different
+        # order on each call, so the same row's score can differ in the last
+        # bits between runs. The trees themselves are the same either way.
+        "random_forest": RandomForestClassifier(n_estimators=100, random_state=SEED, n_jobs=1),
     }
 
 
