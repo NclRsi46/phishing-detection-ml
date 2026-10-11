@@ -26,6 +26,23 @@ def test_never_goes_over_the_target():
     assert recall_at_fpr(y, s, 0.25) == 0.75
 
 
+def test_never_goes_over_the_target_by_a_small_step():
+    # 100 benign rows, so each one is 1% FPR. Catching all phishing costs
+    # a second false positive (2% FPR), which is over a 1% target.
+    y = [0] * 100 + [1] * 100
+    s = [0.995, 0.985] + [0.1] * 98 + [0.99] * 50 + [0.98] * 50
+    assert recall_at_fpr(y, s, 0.01) == 0.5
+
+
+def test_needs_both_classes():
+    for y in ([0, 0, 0], [1, 1, 1]):
+        try:
+            recall_at_fpr(y, [0.2, 0.5, 0.9], 0.01)
+        except ValueError:
+            continue
+        raise AssertionError(f"no error for labels {y}")
+
+
 def test_tied_scores_move_together():
     # The phishing and benign rows tied at 0.5 can't be separated by any
     # threshold, so at a low target only the 0.9 row is caught.

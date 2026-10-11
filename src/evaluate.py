@@ -48,6 +48,10 @@ def recall_at_fpr(y_true, scores, target: float) -> float:
     The threshold is read off this data's ROC curve, so this describes how well
     the model ranks rows, not a threshold that would hold up on new data.
     """
+    # With one class the rate is undefined: all-benign gives nan, which a
+    # mean over splits would silently skip.
+    if np.unique(y_true).size != 2:
+        raise ValueError("recall_at_fpr needs both benign and phishing rows")
     # Keep every threshold: the default drops points on straight stretches of
     # the curve, and one of those can be the best point under the target.
     fpr, tpr, _ = roc_curve(y_true, scores, drop_intermediate=False)
