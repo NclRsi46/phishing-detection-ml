@@ -59,7 +59,7 @@ Operating points, over the same 10 splits:
 | host (Umbrella) | Logistic Regression | 11.1% ± 3.2 | 28.2% ± 3.9 | 74.5% ± 2.8 |
 | host (Umbrella) | Random Forest | 13.6% ± 5.3 | 29.9% ± 2.7 | 74.4% ± 2.2 |
 
-Recall at a fixed false positive rate is the best recall at any threshold whose false positive rate on the test split is at or below the target. The threshold is read off the test split's ROC curve, so this describes how well the model ranks domains; a threshold picked on one split won't land at exactly 1% on new data. With about 1,000 benign test rows, 1% is about 10 false positives, which is why that column moves so much between splits.
+Recall at a fixed false positive rate is the best recall at any threshold whose false positive rate on the test split is at or below the target. The threshold is read off the test split's ROC curve, so this describes how well the model ranks domains; a threshold picked on one split won't land at exactly 1% on new data. With about 1,000 benign test rows, 1% allows about 10 false positives, so that column moves a lot between splits. Ties make it worse: a Random Forest score of 1.0 means all 100 trees agree, and many rows share it. In one host split, 12 benign and 128 phishing domains tie at 1.0, more benign rows than 1% allows, so no threshold can take any of them and that split's recall at 1% is 0. That one split accounts for most of the host forest's ± 5.3; the other nine range from 11.0% to 17.9%.
 
 Precision and average precision depend on the class balance. The test sets are about 50/50; in real traffic phishing is a small fraction of domains, so precision at any threshold would be much lower. Recall at a fixed false positive rate doesn't depend on the balance.
 
@@ -81,7 +81,7 @@ Dataset sizes after cleaning:
 | domain | 5,015 | 5,015 | 7,990 | 2,040 |
 | host | 5,015 | 5,015 | 8,055 | 1,975 |
 
-The Random Forest doesn't beat the linear baseline, which suggests the signal in these features is mostly simple (longer, more random-looking names with more hyphens and digits, on cheap TLDs). Entropy and length carry about 60% of the forest's feature importance in both experiments. At the default 0.5 threshold the false positive rate is above 20%, far too high for blocking anything. Raising the threshold trades recall for fewer false positives: at a 1% false positive rate the models still catch 11 to 15% of phishing domains. That's a narrow high-confidence slice, useful as one signal for triage, not as a filter.
+The Random Forest doesn't beat the linear baseline, which suggests the signal in these features is mostly simple (longer, more random-looking names with more hyphens and digits, on cheap TLDs). Entropy and length carry about 60% of the forest's feature importance in both experiments. At the default 0.5 threshold the false positive rate is above 20%, far too high for blocking anything. Ranked by score, the top slice of each test split that stays within a 1% false positive rate holds 11 to 15% of the phishing domains on average, but a threshold set to hit 1% on one split won't hit it exactly on new data. That's a narrow high-confidence slice, useful as one signal for triage, not as a filter.
 
 <p>
   <img src="results/confusion_domain_random_forest.png" width="380" alt="Confusion matrix, domain level, random forest">
@@ -93,7 +93,7 @@ The Random Forest doesn't beat the linear baseline, which suggests the signal in
   <img src="results/pr_curve_host.png" width="380" alt="Precision-recall curve, host level">
 </p>
 
-`src/sanity_check.py` scores a fixed list of real and made-up URLs. Real legitimate domains it scores high: `en.wikipedia.org` (0.63 on the domain model) and `login.microsoftonline.com` (0.53, pushed up because "microsoft" appears in a domain that isn't `microsoft.com`). The made-up phishing URLs all score high, but they were written to look like phishing, so they say little about recall. The test-set recall above is the honest number.
+`src/sanity_check.py` scores a fixed list of real and made-up URLs. Real legitimate domains it scores high: `en.wikipedia.org` (0.63 on the domain model) and `login.microsoftonline.com` (0.53, pushed up because "microsoft" appears in a domain that isn't `microsoft.com`). The made-up phishing URLs all score high, but they were written to look like phishing, so they say little about recall. The test-set numbers above are the honest ones.
 
 ## What I got wrong the first time
 
