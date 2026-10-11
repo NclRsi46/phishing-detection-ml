@@ -55,7 +55,7 @@ Operating points, over the same 10 splits:
 | Experiment | Model | Recall at 1% FPR | Recall at 5% FPR | Average precision |
 |---|---|---|---|---|
 | domain (Tranco) | Logistic Regression | 14.4% ± 2.1 | 30.7% ± 2.7 | 73.9% ± 2.1 |
-| domain (Tranco) | Random Forest | 15.4% ± 2.8 | 29.5% ± 2.6 | 73.2% ± 2.1 |
+| domain (Tranco) | Random Forest | 15.4% ± 2.9 | 29.5% ± 2.6 | 73.2% ± 2.1 |
 | host (Umbrella) | Logistic Regression | 11.1% ± 3.2 | 28.2% ± 3.9 | 74.5% ± 2.8 |
 | host (Umbrella) | Random Forest | 13.6% ± 5.3 | 29.9% ± 2.7 | 74.4% ± 2.2 |
 
@@ -173,6 +173,7 @@ python src/sanity_check.py
 python tests/test_features.py
 python tests/test_split.py
 python tests/test_metrics.py
+python tests/test_train.py
 ```
 
 Score a single URL with the domain-level Random Forest:
@@ -216,6 +217,7 @@ phishing-detection-ml/
 ├── tests/
 │   ├── test_features.py
 │   ├── test_split.py
-│   └── test_metrics.py
+│   ├── test_metrics.py
+│   └── test_train.py
 └── requirements.txt
 ```

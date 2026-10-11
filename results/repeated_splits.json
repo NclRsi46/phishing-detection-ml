@@ -48,8 +48,8 @@
         "std": 0.016
       },
       "recall_at_1pct_fpr": {
-        "mean": 0.1541,
-        "std": 0.0283
+        "mean": 0.1538,
+        "std": 0.0285
       },
       "recall_at_5pct_fpr": {
         "mean": 0.2951,
@@ -110,7 +110,7 @@
         "std": 0.0134
       },
       "recall_at_1pct_fpr": {
-        "mean": 0.1363,
+        "mean": 0.136,
         "std": 0.0526
       },
       "recall_at_5pct_fpr": {
