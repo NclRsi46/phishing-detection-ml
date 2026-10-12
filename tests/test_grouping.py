@@ -36,8 +36,8 @@ def test_merged_counts_old_groups_and_rows():
 def test_mixed_label_only_after_the_merge():
     df = make_df()
     old, new = keys(df)
-    assert mixed_label(df["label"], old) == {"groups": 0, "rows": 0}
-    assert mixed_label(df["label"], new) == {"groups": 1, "rows": 2}
+    assert mixed_label(df["label"], old) == {"groups": 0, "rows": 0, "keys": []}
+    assert mixed_label(df["label"], new) == {"groups": 1, "rows": 2, "keys": ["brand"]}
 
 
 def test_tld_sibling_share_counts_test_phishing_only():

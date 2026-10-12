@@ -37,7 +37,7 @@ LARGEST = 5
 def mixed_label(labels: pd.Series, keys: pd.Series) -> dict:
     by_key = labels.groupby(keys).agg(["min", "max", "size"])
     mixed = by_key[(by_key["min"] == 0) & (by_key["max"] == 1)]
-    return {"groups": len(mixed), "rows": int(mixed["size"].sum())}
+    return {"groups": len(mixed), "rows": int(mixed["size"].sum()), "keys": sorted(mixed.index)}
 
 
 def merged(labels: pd.Series, old: pd.Series, new: pd.Series) -> dict:
