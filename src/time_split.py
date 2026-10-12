@@ -18,6 +18,9 @@ benign campaigns are split at random as in repeat_splits.py, over 10 seeds. The
 phishing side is the same in every run, so the spread over runs only shows how
 much the benign sample moves the numbers.
 
+Every model from ngram_audit.py is scored, with the same Allegro and kit
+wording checks, so the result can be compared with the random split's audit.
+
 verified_online.csv only lists phishing that was still online when it was
 downloaded, and most of its domains were first submitted in the last few
 months before that. Older training rows are the ones that stayed up, so the
@@ -39,9 +42,11 @@ from sklearn.model_selection import GroupShuffleSplit
 
 from build_dataset import PHISHTANK_FILE
 from features import registered_domain
+from ngram_audit import audit_splits, with_name_and_suffix
 from preprocess import LEVELS, PROCESSED_DIR, TEST_SIZE, campaign_key, featurize
-from repeat_splits import METRICS, N_SPLITS, RESULTS_DIR, score
-from train import make_models, model_columns
+from repeat_splits import N_SPLITS, RESULTS_DIR
+
+TOP_SUFFIXES = 6
 
 
 def first_seen_by_domain(raw: pd.DataFrame) -> pd.Series:
@@ -92,6 +97,9 @@ def describe(df: pd.DataFrame, allegro: np.ndarray, splits: list) -> dict:
     moved = train_phish & groups.isin(straddling) & (df["first_seen"] >= cut)
 
     benign_test = [int((df.iloc[test_idx]["label"] == 0).sum()) for _, test_idx in splits]
+    shares = {part: df[mask]["suffix"].value_counts(normalize=True)
+              for part, mask in (("train_phishing", train_phish), ("test_phishing", test_phish), ("benign", ~phish))}
+    top = shares["test_phishing"].index[:TOP_SUFFIXES]
     years = df[train_phish]["first_seen"].dt.year.value_counts().sort_index()
     return {
         "cut": cut.isoformat(),
@@ -107,6 +115,9 @@ def describe(df: pd.DataFrame, allegro: np.ndarray, splits: list) -> dict:
         "allegro_share_train_phishing": round(float(allegro[train_phish.to_numpy()].mean()), 4),
         "allegro_share_test_phishing": round(float(allegro[test_phish.to_numpy()].mean()), 4),
         "train_phishing_by_first_seen_year": {str(year): int(n) for year, n in years.items()},
+        "top_test_phishing_suffixes": {
+            suffix: {part: round(float(share.get(suffix, 0.0)), 4) for part, share in shares.items()} for suffix in top
+        },
     }
 
 
@@ -123,39 +134,23 @@ def main():
             continue
 
         data = pd.read_csv(path)
-        df = featurize(data, level)
+        df = with_name_and_suffix(featurize(data, level), level)
         # Only phishing rows get a time: a benign domain can also appear in
         # PhishTank (an abused legitimate site), which says nothing about it.
         df["first_seen"] = df["domain"].map(seen).where(df["label"] == 1)
-        allegro = ((data["url"].map(targets) == "Allegro") & (data["label"] == 1)).to_numpy()
-        y = df["label"]
+        allegro = (data["url"].map(targets) == "Allegro").values
         splits = list(time_splits(df, N_SPLITS))
-
-        rows = []
-        for train_idx, test_idx in splits:
-            for name, model in make_models(level).items():
-                X = df[model_columns(name, level)]
-                model.fit(X.iloc[train_idx], y.iloc[train_idx])
-                X_test = X.iloc[test_idx]
-                metrics = score(y.iloc[test_idx], model.predict(X_test), model.predict_proba(X_test)[:, 1])
-                rows.append({"model": name, **metrics})
-
-        summary = pd.DataFrame(rows).groupby("model").agg(["mean", "std"]).round(4)
-        results[level] = {
-            "split": describe(df, allegro, splits),
-            "models": {
-                model: {metric: {"mean": summary.loc[model, (metric, "mean")], "std": summary.loc[model, (metric, "std")]}
-                        for metric in METRICS}
-                for model in make_models(level)
-            },
-        }
+        results[level] = {"split": describe(df, allegro, splits), "models": audit_splits(df, allegro, splits, level)}
 
         split = results[level]["split"]
         print(f"== {level}: cut {split['cut']}, {split['phishing_train']:,} train / "
-              f"{split['phishing_test']:,} test phishing; mean (std) over {N_SPLITS} benign samples ==")
-        for model, metrics in results[level]["models"].items():
-            cells = "  ".join(f"{m} {v['mean']:.3f} ({v['std']:.3f})" for m, v in metrics.items())
-            print(f"  {model:30} {cells}")
+              f"{split['phishing_test']:,} test phishing; mean over {N_SPLITS} benign samples ==")
+        for model, m in results[level]["models"].items():
+            print(
+                f"  {model:30} AP {m['average_precision']['mean']:.3f}  R@1%FPR {m['recall_at_1pct_fpr']['mean']:.3f}  "
+                f"without Allegro {m['recall_at_1pct_fpr_without_allegro']['mean']:.3f}  "
+                f"unrepeated {m['recall_at_1pct_fpr_unrepeated']['mean']:.3f}"
+            )
 
     os.makedirs(RESULTS_DIR, exist_ok=True)
     with open(os.path.join(RESULTS_DIR, "time_split.json"), "w") as f:
