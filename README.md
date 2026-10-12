@@ -87,12 +87,13 @@ Dataset sizes after cleaning:
 | domain | 5,015 | 5,015 | 7,990 | 2,040 |
 | host | 5,015 | 5,015 | 8,055 | 1,975 |
 
-The Random Forest doesn't beat the linear baseline, which suggests the signal in these features is mostly simple (longer, more random-looking names with more hyphens and digits, on cheap TLDs). Entropy and length carry about 60% of the forest's feature importance in both experiments. At the default 0.5 threshold the false positive rate is above 20%, far too high for blocking anything. Ranked by score, the top slice of each test split that stays within a 1% false positive rate holds 11 to 15% of the phishing domains on average, but a threshold set to hit 1% on one split won't hit it exactly on new data. That's a narrow high-confidence slice, useful as one signal for triage, not as a filter. A third to over half of that slice is one brand: 32 to 55% of these models' catches at 1% FPR are Allegro-themed, while Allegro is about 8% of the phishing test rows (`results/ngram_audit.json`).
+The Random Forest doesn't beat the linear baseline, which suggests the signal in these features is mostly simple (longer, more random-looking names with more hyphens and digits, on cheap TLDs). Entropy and length carry about 60% of the forest's feature importance in both experiments. At the default 0.5 threshold the false positive rate is above 20%, far too high for blocking anything. Ranked by score, the top slice of each test split that stays within a 1% false positive rate holds 11 to 15% of the phishing domains on average, but a threshold set to hit 1% on one split won't hit it exactly on new data. That's a narrow high-confidence slice, useful as one signal for triage, not as a filter. A third to over half of that slice is one brand: 36 to 55% of these models' catches at 1% FPR are Allegro-themed, while Allegro is about 8% of the phishing test rows. On test names that don't repeat kit wording seen in training, these models' recall at 1% FPR is only 2 to 5% (below, and `results/ngram_audit.json`).
 
-The character n-gram model beats all four hand-feature models on every ranking metric. Recall at 1% FPR goes from 14.4–15.4% to 28.2% on domains and from 11.1–13.6% to 33.6% on hosts, and average precision rises by 7 to 10 points. It reads the same name the hand features are computed from, so the 13 features miss signal that is in the name. At 0.5 its false positive rate is still 21 to 25%. `src/ngram_audit.py` reruns the 10 splits to see where the gain comes from:
+The character n-gram model ranks better than all four hand-feature models. Recall at 1% FPR goes from 14.4–15.4% to 28.2% on domains and from 11.1–13.6% to 33.6% on hosts, and average precision rises by 7 to 10 points. At 0.5 its false positive rate is still 21 to 25%. `src/ngram_audit.py` reruns the 10 splits to see where the gain comes from, and much of it isn't new information about how phishing names look:
 
-- **Mostly the name, partly the TLD.** With the public suffix stripped, the same model still gets 24.0% (domain) and 29.1% (host) recall at 1% FPR. The TLD carries the rest: the hand features put `.cfd`, `.icu`, and `.io` in the same "other" group, while the n-gram model tells them apart, and a model on the suffix alone gets 15.7% and 14.2%, as much as the hand features. Many of the heaviest n-grams are TLDs (at domain level, `.cfd` and `.icu` toward phishing, `.ru`, `.jp`, and `.gov` toward benign; `results/metrics.json`). TLD abuse moves fast, so that part is the most likely to decay.
-- **Not one kit.** All three models already catch 96 to 99% of Allegro-themed test domains at 0.5. Against the hand-feature Logistic Regression, the gain is on the other phishing rows: recall 50.1% to 60.6% on domains and 60.2% to 64.8% on hosts, and Allegro makes up less of the n-gram model's 1% slice (27% and 23%). Only Allegro was checked; other kits that vary letters can still sit on both sides of the split.
+- **On domains, about half of it is the TLD.** The hand features sort TLDs into four groups, so `.cfd`, `.icu`, and `.sbs` look the same to them. Adding the full suffix to the hand features takes recall at 1% FPR from 14.4% to 21.5% on domains, half of the way to the n-gram model, but only from 11.1% to 15.6% on hosts. Many of the heaviest n-grams are TLDs (at domain level, `.cfd` and `.icu` toward phishing, `.ru`, `.jp`, and `.gov` toward benign; `results/metrics.json`). TLD abuse moves fast, so that part is the most likely to decay.
+- **Not just Allegro.** Without the Allegro-themed rows, the n-gram model still gets 22.3% at 1% FPR on domains against 8.2 to 10.3% for the hand-feature models, and 27.9% against 5.2 to 9.4% on hosts.
+- **Much of the rest is kit wording that repeats across the split.** Kits reuse words (`pl-oferta`, `coursier`, `-pickup-`) across names the campaign grouping keeps apart. 27% of the domain and 37% of the host test phishing names share an 8-character substring with a training phishing name (digit runs as `#`, suffix stripped). Without those rows, recall at 1% FPR drops for every model: the hand-feature models get 1.9 to 5.2%, and the n-gram model 13.2% on domains and 11.6% on hosts. On those domains it does no better than the suffix alone (13.2%) or the hand features plus the suffix (12.2%). On hosts it keeps a lead (11.6% against 8.8% and 6.6%). The filter also drops names that only share ordinary words, so these numbers are lower bounds. Kits do get reused, so repeated wording is a real signal, but a random split can't say how long it keeps working; a time-based split could.
 - **The known artifacts show up.** `.1`, from IP hosts that only phishing has, weighs toward phishing, and on hosts `cdn` and `api`, from Umbrella's infrastructure hostnames, weigh toward benign.
 
 <p>
@@ -148,7 +149,7 @@ The lesson: when two classes come from different sources, check every column for
 ## Limitations
 
 - **Domain-only features can't see path tricks.** A phishing page on a compromised legitimate site, or on a free host like `weebly.com` or `web.app`, is invisible to this model, and those were dropped from training (85% of PhishTank rows had a registered domain in Tranco).
-- **PhishTank is skewed.** 8.5% of phishing domains (426 of 5,015, by PhishTank's `target` column) imitate one brand, Allegro, mostly from a few kits. The campaign grouping only merges domains that differ by digits; kits that vary letters (`298278sdhsprywanie.cfd`) can still sit on both sides of the split.
+- **PhishTank is skewed.** 8.5% of phishing domains (426 of 5,015, by PhishTank's `target` column) imitate one brand, Allegro, mostly from a few kits. The campaign grouping only merges domains that differ by digits; kits that vary letters (`298278sdhsprywanie.cfd`) or the TLD (`pl-oferta#.icu` and `pl-oferta#.sbs` are different groups) can still sit on both sides of the split.
 - **Benign means popular.** Tranco and Umbrella are popularity lists. The model partly learns "popular vs obscure," and Umbrella also includes CDN and API hostnames that don't look like sites people visit.
 - **`is_ip` only appears in phishing.** Neither benign list has IP hosts, so the model treats any IP as phishing.
 - **The data snapshots are 10 months apart.** PhishTank is from December 2025 and Umbrella from October 2026. Naming and TLD trends that shifted in between can look like a phishing signal, and Umbrella's overlap with these phishing domains is understated because most of them stopped getting DNS traffic long before the Umbrella snapshot.
@@ -188,6 +189,7 @@ python tests/test_split.py
 python tests/test_metrics.py
 python tests/test_train.py
 python tests/test_predict.py
+python tests/test_audit.py
 ```
 
 Score a single URL with the domain-level Random Forest:
@@ -235,6 +237,7 @@ phishing-detection-ml/
 │   ├── test_split.py
 │   ├── test_metrics.py
 │   ├── test_train.py
-│   └── test_predict.py
+│   ├── test_predict.py
+│   └── test_audit.py
 └── requirements.txt
 ```
