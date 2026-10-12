@@ -10,9 +10,9 @@ A phishing row's time is the earliest submission of its registered domain in
 verified_online.csv. A campaign starts at its earliest phishing row, and the
 whole campaign goes to test if it started on or after the cut, to train if
 before, so a campaign seen before and after the cut stays in train. Kits that
-vary letters or the TLD are separate campaigns, so, as in the random split,
-some can still sit on both sides. The cut is the 80th percentile of campaign
-start times (1 - TEST_SIZE), chosen before any model was trained on this split.
+vary letters are separate campaigns, so, as in the random split, some can
+still sit on both sides. The cut is the 80th percentile of campaign start
+times (1 - TEST_SIZE), chosen before any model was trained on this split.
 
 Benign rows have no timestamps (Tranco and Umbrella are one snapshot each), so
 benign campaigns are split at random as in repeat_splits.py, over 10 seeds. The
@@ -44,7 +44,7 @@ from sklearn.model_selection import GroupShuffleSplit
 from build_dataset import PHISHTANK_FILE
 from features import registered_domain
 from ngram_audit import audit_splits, with_name_and_suffix
-from preprocess import LEVELS, PROCESSED_DIR, TEST_SIZE, campaign_key, featurize
+from preprocess import LEVELS, PROCESSED_DIR, TEST_SIZE, campaign_group, featurize
 from repeat_splits import N_SPLITS, RESULTS_DIR
 
 TOP_SUFFIXES = 6
@@ -60,7 +60,7 @@ def first_seen_by_domain(raw: pd.DataFrame) -> pd.Series:
 def campaign_starts(df: pd.DataFrame) -> pd.Series:
     """Earliest phishing row time of each campaign that has phishing rows."""
     phish = df[df["label"] == 1]
-    return phish["first_seen"].groupby(phish["domain"].map(campaign_key)).min()
+    return phish["first_seen"].groupby(phish["domain"].map(campaign_group)).min()
 
 
 def time_cut(starts: pd.Series) -> pd.Timestamp:
@@ -70,7 +70,7 @@ def time_cut(starts: pd.Series) -> pd.Timestamp:
 def time_splits(df: pd.DataFrame, n_splits: int, seed: int = 0):
     """Yields (train_idx, test_idx) positions. Campaigns with phishing rows go
     by their start time, benign-only campaigns are split at random."""
-    groups = df["domain"].map(campaign_key)
+    groups = df["domain"].map(campaign_group)
     starts = campaign_starts(df)
     late = groups.isin(starts.index[starts >= time_cut(starts)]).to_numpy()
     untimed = np.flatnonzero(~groups.isin(starts.index).to_numpy())
@@ -92,7 +92,7 @@ def describe(df: pd.DataFrame, allegro: np.ndarray, splits: list) -> dict:
     train_phish, test_phish = phish & ~test, phish & test
 
     # Campaigns that started before the cut but have rows first seen after it.
-    groups = df["domain"].map(campaign_key)
+    groups = df["domain"].map(campaign_group)
     last = df[phish]["first_seen"].groupby(groups[phish]).max()
     straddling = starts.index[(starts < cut) & (last >= cut)]
     moved = train_phish & groups.isin(straddling) & (df["first_seen"] >= cut)

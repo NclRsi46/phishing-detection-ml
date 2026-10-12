@@ -19,7 +19,7 @@ from sklearn.metrics import average_precision_score, confusion_matrix, f1_score,
 from sklearn.model_selection import GroupShuffleSplit
 
 from evaluate import OPERATING_POINTS, recall_at_fpr
-from preprocess import LEVELS, PROCESSED_DIR, TEST_SIZE, campaign_key, featurize
+from preprocess import LEVELS, PROCESSED_DIR, TEST_SIZE, campaign_group, featurize
 from train import make_models, model_columns
 
 RESULTS_DIR = "results"
@@ -50,7 +50,7 @@ def main():
 
         df = featurize(pd.read_csv(path), level)
         y = df["label"]
-        groups = df["domain"].map(campaign_key)
+        groups = df["domain"].map(campaign_group)
         splitter = GroupShuffleSplit(n_splits=N_SPLITS, test_size=TEST_SIZE, random_state=0)
 
         rows = []

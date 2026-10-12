@@ -46,7 +46,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from build_dataset import PHISHTANK_FILE
 from evaluate import recall_at_fpr
 from features import EXTRACT, feature_names
-from preprocess import LEVELS, PROCESSED_DIR, TEST_SIZE, campaign_key, featurize
+from preprocess import LEVELS, PROCESSED_DIR, TEST_SIZE, campaign_group, campaign_key, featurize
 from repeat_splits import N_SPLITS, RESULTS_DIR, score
 from train import make_models, model_columns
 
@@ -196,7 +196,7 @@ def main():
         raw = pd.read_csv(path)
         df = with_name_and_suffix(featurize(raw, level), level)
         allegro = (raw["url"].map(targets) == "Allegro").values
-        groups = df["domain"].map(campaign_key)
+        groups = df["domain"].map(campaign_group)
         splitter = GroupShuffleSplit(n_splits=N_SPLITS, test_size=TEST_SIZE, random_state=0)
         results[level] = {
             "allegro_phishing_rows": int(allegro.sum()),
