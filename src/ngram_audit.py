@@ -23,6 +23,8 @@ from, over the same 10 splits as repeat_splits.py:
 
 Allegro-themed means PhishTank's "target" column says Allegro.
 
+time_split.py runs the same audit over the time-based split.
+
 Writes results/ngram_audit.json.
 
 Usage:
@@ -143,6 +145,44 @@ def unrepeated_metrics(y_true, scores, repeated) -> dict:
     }
 
 
+def with_name_and_suffix(df: pd.DataFrame, level: str) -> pd.DataFrame:
+    df = df.copy()
+    df["name"], df["suffix"] = zip(*df[level].map(lambda text: name_and_suffix(text, level)))
+    return df
+
+
+def audit_splits(df: pd.DataFrame, allegro: np.ndarray, splits, level: str) -> dict:
+    """Fits every audit model on each (train_idx, test_idx) split and returns
+    the mean and std of each metric per model. df needs the name and suffix
+    columns from with_name_and_suffix."""
+    y = df["label"]
+    rows = []
+    for train_idx, test_idx in splits:
+        y_test = y.iloc[test_idx].values
+        train_phishing = df["name"].iloc[train_idx][y.iloc[train_idx] == 1]
+        # Only phishing rows are dropped, so the 1% FPR threshold stays
+        # on the same benign rows.
+        repeated = repeated_names(train_phishing, df["name"].iloc[test_idx]) & (y_test == 1)
+        for name, (model, columns) in audit_models(level).items():
+            X = df[columns]
+            model.fit(X.iloc[train_idx], y.iloc[train_idx])
+            y_pred = model.predict(X.iloc[test_idx])
+            scores = model.predict_proba(X.iloc[test_idx])[:, 1]
+            rows.append({
+                "model": name,
+                **score(y_test, y_pred, scores),
+                **allegro_metrics(y_test, scores, allegro[test_idx]),
+                **unrepeated_metrics(y_test, scores, repeated),
+            })
+
+    summary = pd.DataFrame(rows).groupby("model", sort=False).agg(["mean", "std"]).round(4)
+    metrics = summary.columns.get_level_values(0).unique()
+    return {
+        model: {m: {"mean": summary.loc[model, (m, "mean")], "std": summary.loc[model, (m, "std")]} for m in metrics}
+        for model in summary.index
+    }
+
+
 def main():
     targets = pd.read_csv(PHISHTANK_FILE, usecols=["url", "target"]).drop_duplicates("url").set_index("url")["target"]
     results = {}
@@ -154,40 +194,13 @@ def main():
             continue
 
         raw = pd.read_csv(path)
-        df = featurize(raw, level)
-        df["name"], df["suffix"] = zip(*df[level].map(lambda text: name_and_suffix(text, level)))
-        y = df["label"]
+        df = with_name_and_suffix(featurize(raw, level), level)
         allegro = (raw["url"].map(targets) == "Allegro").values
         groups = df["domain"].map(campaign_key)
         splitter = GroupShuffleSplit(n_splits=N_SPLITS, test_size=TEST_SIZE, random_state=0)
-
-        rows = []
-        for train_idx, test_idx in splitter.split(df, y, groups=groups):
-            y_test = y.iloc[test_idx].values
-            train_phishing = df["name"].iloc[train_idx][y.iloc[train_idx] == 1]
-            # Only phishing rows are dropped, so the 1% FPR threshold stays
-            # on the same benign rows.
-            repeated = repeated_names(train_phishing, df["name"].iloc[test_idx]) & (y_test == 1)
-            for name, (model, columns) in audit_models(level).items():
-                X = df[columns]
-                model.fit(X.iloc[train_idx], y.iloc[train_idx])
-                y_pred = model.predict(X.iloc[test_idx])
-                scores = model.predict_proba(X.iloc[test_idx])[:, 1]
-                rows.append({
-                    "model": name,
-                    **score(y_test, y_pred, scores),
-                    **allegro_metrics(y_test, scores, allegro[test_idx]),
-                    **unrepeated_metrics(y_test, scores, repeated),
-                })
-
-        summary = pd.DataFrame(rows).groupby("model", sort=False).agg(["mean", "std"]).round(4)
-        metrics = summary.columns.get_level_values(0).unique()
         results[level] = {
             "allegro_phishing_rows": int(allegro.sum()),
-            "models": {
-                model: {m: {"mean": summary.loc[model, (m, "mean")], "std": summary.loc[model, (m, "std")]} for m in metrics}
-                for model in summary.index
-            },
+            "models": audit_splits(df, allegro, splitter.split(df, df["label"], groups=groups), level),
         }
 
         print(f"== {level}: mean over {N_SPLITS} splits ({allegro.sum()} Allegro-themed phishing rows) ==")
