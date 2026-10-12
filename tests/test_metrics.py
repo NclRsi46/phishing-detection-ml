@@ -71,6 +71,8 @@ def test_top_tie_counts_rows_at_the_highest_score():
     s = np.array([1.0, 1.0, 0.2, 0.1, 1.0, 1.0, 1.0, 0.5])
     assert top_tie(y, s) == {"benign": 2, "phishing": 3}
     assert recall_at_fpr(y, s, 0.25) == 0.0
+    # Only the highest score counts, not the next one down.
+    assert top_tie(np.array([0, 1, 1]), np.array([0.9, 1.0, 0.8])) == {"benign": 0, "phishing": 1}
 
 
 if __name__ == "__main__":
