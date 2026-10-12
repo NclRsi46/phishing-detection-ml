@@ -31,8 +31,11 @@ def score(bundle: dict, url: str) -> float:
     """Probability that the URL is phishing."""
     # Column order comes from the saved model, not from this file, so a
     # change to features.py can't silently reorder the model's inputs.
+    # The n-gram model reads the name itself, built the same way as the
+    # "domain" and "host" columns in build_dataset.py.
     features = extract_features(url, bundle["level"])
-    X = pd.DataFrame([features], columns=bundle["features"])
+    row = {**features, "domain": registered_domain(url), "host": hostname(url)}
+    X = pd.DataFrame([row], columns=bundle["features"])
     return float(bundle["model"].predict_proba(X)[0][1])
 
 

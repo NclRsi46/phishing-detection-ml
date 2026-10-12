@@ -59,6 +59,36 @@
         "mean": 0.732,
         "std": 0.0205
       }
+    },
+    "char_ngram_logistic_regression": {
+      "precision": {
+        "mean": 0.722,
+        "std": 0.0211
+      },
+      "recall": {
+        "mean": 0.6382,
+        "std": 0.0142
+      },
+      "f1": {
+        "mean": 0.6774,
+        "std": 0.0155
+      },
+      "false_positive_rate": {
+        "mean": 0.2496,
+        "std": 0.0143
+      },
+      "recall_at_1pct_fpr": {
+        "mean": 0.2823,
+        "std": 0.021
+      },
+      "recall_at_5pct_fpr": {
+        "mean": 0.3988,
+        "std": 0.0241
+      },
+      "average_precision": {
+        "mean": 0.8079,
+        "std": 0.0172
+      }
     }
   },
   "host": {
@@ -120,6 +150,36 @@
       "average_precision": {
         "mean": 0.7442,
         "std": 0.0222
+      }
+    },
+    "char_ngram_logistic_regression": {
+      "precision": {
+        "mean": 0.7639,
+        "std": 0.0228
+      },
+      "recall": {
+        "mean": 0.6759,
+        "std": 0.0216
+      },
+      "f1": {
+        "mean": 0.7169,
+        "std": 0.0173
+      },
+      "false_positive_rate": {
+        "mean": 0.206,
+        "std": 0.0161
+      },
+      "recall_at_1pct_fpr": {
+        "mean": 0.3359,
+        "std": 0.0461
+      },
+      "recall_at_5pct_fpr": {
+        "mean": 0.4624,
+        "std": 0.0265
+      },
+      "average_precision": {
+        "mean": 0.8403,
+        "std": 0.0171
       }
     }
   }
