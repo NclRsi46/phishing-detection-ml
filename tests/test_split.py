@@ -49,6 +49,9 @@ def test_campaign_group_drops_multi_part_suffixes():
 
 def test_campaign_group_keeps_ip_hosts_together():
     assert campaign_group("13.88.168.44") == campaign_group("43.134.233.26") == "#.#.#.#"
+    # registered_domain returns IPv6 without brackets, which tldextract
+    # doesn't recognize as an address.
+    assert campaign_group("2001:db8::1") == campaign_key("2001:db8::1")
 
 
 def test_campaign_group_keeps_different_names_apart():
