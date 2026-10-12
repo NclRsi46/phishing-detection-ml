@@ -148,7 +148,7 @@ The lesson: when two classes come from different sources, check every column for
 ## Limitations
 
 - **Domain-only features can't see path tricks.** A phishing page on a compromised legitimate site, or on a free host like `weebly.com` or `web.app`, is invisible to this model, and those were dropped from training (85% of PhishTank rows had a registered domain in Tranco).
-- **PhishTank is skewed.** 8.3% of phishing domains (418 of 5,015) imitate one brand, Allegro, mostly from a few kits. The campaign grouping only merges domains that differ by digits; kits that vary letters (`298278sdhsprywanie.cfd`) can still sit on both sides of the split.
+- **PhishTank is skewed.** 8.5% of phishing domains (426 of 5,015, by PhishTank's `target` column) imitate one brand, Allegro, mostly from a few kits. The campaign grouping only merges domains that differ by digits; kits that vary letters (`298278sdhsprywanie.cfd`) can still sit on both sides of the split.
 - **Benign means popular.** Tranco and Umbrella are popularity lists. The model partly learns "popular vs obscure," and Umbrella also includes CDN and API hostnames that don't look like sites people visit.
 - **`is_ip` only appears in phishing.** Neither benign list has IP hosts, so the model treats any IP as phishing.
 - **The data snapshots are 10 months apart.** PhishTank is from December 2025 and Umbrella from October 2026. Naming and TLD trends that shifted in between can look like a phishing signal, and Umbrella's overlap with these phishing domains is understated because most of them stopped getting DNS traffic long before the Umbrella snapshot.
