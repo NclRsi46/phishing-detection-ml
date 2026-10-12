@@ -36,7 +36,8 @@ PROCESSED_DIR = "data/processed"
 MODEL_DIR = "models"
 RESULTS_DIR = "results"
 LEVELS = ["domain", "host"]
-MODEL_NAMES = ["logistic_regression", "random_forest"]
+MODEL_NAMES = ["logistic_regression", "random_forest", "char_ngram_logistic_regression"]
+TOP_NGRAMS = 15
 
 # Target false positive rates for the operating-point metrics.
 OPERATING_POINTS = {"recall_at_1pct_fpr": 0.01, "recall_at_5pct_fpr": 0.05}
@@ -80,7 +81,22 @@ def evaluate(bundle: dict, test: pd.DataFrame) -> dict:
         ranked = sorted(zip(bundle["features"], model.feature_importances_), key=lambda t: -t[1])
         metrics["feature_importance"] = {name: round(float(v), 3) for name, v in ranked}
 
+    if "columntransformer" in getattr(model, "named_steps", {}):
+        metrics["top_ngrams"] = top_ngrams(model)
+
     return metrics
+
+
+def top_ngrams(model) -> dict:
+    """The n-grams with the largest weights toward each class, to check what
+    the n-gram model learned (a source artifact would show up here)."""
+    names = model[0].named_transformers_["ngrams"].get_feature_names_out()
+    weights = model[-1].coef_[0]
+    order = np.argsort(weights, kind="stable")
+    return {
+        "phishing": {names[i]: round(float(weights[i]), 3) for i in order[::-1][:TOP_NGRAMS]},
+        "benign": {names[i]: round(float(weights[i]), 3) for i in order[:TOP_NGRAMS]},
+    }
 
 
 def save_confusion_matrix(metrics: dict, level: str, name: str) -> None:
@@ -131,7 +147,7 @@ def main():
             save_confusion_matrix(metrics, level, name)
 
             print(
-                f"{level:6} {name:20} precision {metrics['precision']:.4f}  recall {metrics['recall']:.4f}  "
+                f"{level:6} {name:30} precision {metrics['precision']:.4f}  recall {metrics['recall']:.4f}  "
                 f"F1 {metrics['f1']:.4f}  FPR {metrics['false_positive_rate']:.4f}  "
                 f"R@1%FPR {metrics['recall_at_1pct_fpr']:.4f}  R@5%FPR {metrics['recall_at_5pct_fpr']:.4f}  "
                 f"AP {metrics['average_precision']:.4f}"
