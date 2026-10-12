@@ -19,9 +19,8 @@ from sklearn.metrics import average_precision_score, confusion_matrix, f1_score,
 from sklearn.model_selection import GroupShuffleSplit
 
 from evaluate import OPERATING_POINTS, recall_at_fpr
-from features import feature_names
 from preprocess import LEVELS, PROCESSED_DIR, TEST_SIZE, campaign_key, featurize
-from train import make_models
+from train import make_models, model_columns
 
 RESULTS_DIR = "results"
 N_SPLITS = 10
@@ -50,13 +49,14 @@ def main():
             continue
 
         df = featurize(pd.read_csv(path), level)
-        X, y = df[feature_names(level)], df["label"]
+        y = df["label"]
         groups = df["domain"].map(campaign_key)
         splitter = GroupShuffleSplit(n_splits=N_SPLITS, test_size=TEST_SIZE, random_state=0)
 
         rows = []
-        for train_idx, test_idx in splitter.split(X, y, groups=groups):
-            for name, model in make_models().items():
+        for train_idx, test_idx in splitter.split(df, y, groups=groups):
+            for name, model in make_models(level).items():
+                X = df[model_columns(name, level)]
                 model.fit(X.iloc[train_idx], y.iloc[train_idx])
                 X_test = X.iloc[test_idx]
                 metrics = score(y.iloc[test_idx], model.predict(X_test), model.predict_proba(X_test)[:, 1])
@@ -66,13 +66,13 @@ def main():
         results[level] = {
             model: {metric: {"mean": summary.loc[model, (metric, "mean")], "std": summary.loc[model, (metric, "std")]}
                     for metric in METRICS}
-            for model in summary.index
+            for model in make_models(level)
         }
 
         print(f"== {level}: mean (std) over {N_SPLITS} splits ==")
         for model, metrics in results[level].items():
             cells = "  ".join(f"{m} {v['mean']:.3f} ({v['std']:.3f})" for m, v in metrics.items())
-            print(f"  {model:20} {cells}")
+            print(f"  {model:30} {cells}")
 
     os.makedirs(RESULTS_DIR, exist_ok=True)
     with open(os.path.join(RESULTS_DIR, "repeated_splits.json"), "w") as f:
