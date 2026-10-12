@@ -44,6 +44,17 @@ def test_ngram_model_ignores_path_and_query():
         assert a != score(bundle, "http://www.example.org"), level
 
 
+def test_prediction_reads_the_same_name_as_training():
+    # build_dataset.py fills the "domain" and "host" columns with
+    # registered_domain and hostname, and predict.py must build the same
+    # text. The URL has a subdomain, so the two levels' names differ.
+    url = "https://login.paypal-secure.xyz/x"
+    for level, name_of in (("domain", registered_domain), ("host", hostname)):
+        bundle = ngram_bundle(level)
+        expected = bundle["model"].predict_proba(pd.DataFrame({level: [name_of(url)]}))[0][1]
+        assert score(bundle, url) == expected, level
+
+
 if __name__ == "__main__":
     tests = [(name, fn) for name, fn in globals().items() if name.startswith("test_")]
     failed = 0
