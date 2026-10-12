@@ -18,6 +18,8 @@ from, over the same 10 splits as repeat_splits.py:
                   names the campaign grouping keeps apart. The filter
                   also drops names that share ordinary words, so this likely
                   understates recall on new names; it isn't a clean measure.
+                  Names under 8 characters (digits collapsed) have no
+                  substring to share, so they are never flagged.
 
 Allegro-themed means PhishTank's "target" column says Allegro.
 
