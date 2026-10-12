@@ -6,12 +6,13 @@ from the same months as training campaigns. This splits phishing by time
 instead, to see how well models trained on older phishing catch phishing that
 appeared later.
 
-A phishing row's time is the earliest PhishTank submission of its registered
-domain. A campaign starts at its earliest phishing row, and the whole campaign
-goes to test if it started on or after the cut, to train if before. A kit seen
-before and after the cut therefore stays in train, as in the random split. The
-cut is the 80th percentile of campaign start times (1 - TEST_SIZE), chosen
-before any model was trained on this split.
+A phishing row's time is the earliest submission of its registered domain in
+verified_online.csv. A campaign starts at its earliest phishing row, and the
+whole campaign goes to test if it started on or after the cut, to train if
+before, so a campaign seen before and after the cut stays in train. Kits that
+vary letters or the TLD are separate campaigns, so, as in the random split,
+some can still sit on both sides. The cut is the 80th percentile of campaign
+start times (1 - TEST_SIZE), chosen before any model was trained on this split.
 
 Benign rows have no timestamps (Tranco and Umbrella are one snapshot each), so
 benign campaigns are split at random as in repeat_splits.py, over 10 seeds. The
@@ -111,6 +112,7 @@ def describe(df: pd.DataFrame, allegro: np.ndarray, splits: list) -> dict:
         "phishing_test": int(test_phish.sum()),
         "benign_test_mean": round(float(np.mean(benign_test)), 1),
         "straddling_campaigns": len(straddling),
+        "straddling_campaign_keys": sorted(straddling),
         "straddling_rows_after_cut_in_train": int(moved.sum()),
         "allegro_share_train_phishing": round(float(allegro[train_phish.to_numpy()].mean()), 4),
         "allegro_share_test_phishing": round(float(allegro[test_phish.to_numpy()].mean()), 4),
