@@ -221,6 +221,7 @@ python src/evaluate.py
 python src/repeat_splits.py
 python src/ngram_audit.py
 python src/time_split.py
+python src/grouping_audit.py
 python src/sanity_check.py
 python tests/test_features.py
 python tests/test_split.py
@@ -229,6 +230,7 @@ python tests/test_train.py
 python tests/test_predict.py
 python tests/test_audit.py
 python tests/test_time_split.py
+python tests/test_grouping.py
 ```
 
 Score a single URL with the domain-level Random Forest:
