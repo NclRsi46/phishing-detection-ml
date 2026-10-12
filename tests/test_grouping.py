@@ -43,10 +43,12 @@ def test_mixed_label_only_after_the_merge():
 def test_tld_sibling_share_counts_test_phishing_only():
     df = make_df()
     _, new = keys(df)
-    # Train has kit1.sbs; test has kit2.cfd (a sibling), brand.info (not),
-    # and benign brand.fr, which must not count.
-    splits = [([0, 6, 7], [1, 4, 5])]
-    assert tld_sibling_share(df["label"], new, splits) == [0.5]
+    # Split 1: train has kit1.sbs; test has kit2.cfd (a sibling),
+    # brand.info (not), and benign brand.fr, which must not count.
+    # Split 2: brand.info's only match in train is benign brand.fr, which
+    # doesn't make it a sibling.
+    splits = [([0, 6, 7], [1, 4, 5]), ([0, 5, 6, 7], [1, 4])]
+    assert tld_sibling_share(df["label"], new, splits) == [0.5, 0.5]
 
 
 if __name__ == "__main__":
