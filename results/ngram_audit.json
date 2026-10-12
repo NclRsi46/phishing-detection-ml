@@ -31,13 +31,13 @@
           "mean": 0.7392,
           "std": 0.0205
         },
-        "recall_allegro": {
-          "mean": 0.9663,
-          "std": 0.042
+        "recall_at_1pct_fpr_without_allegro": {
+          "mean": 0.0823,
+          "std": 0.0237
         },
-        "recall_other_phishing": {
-          "mean": 0.5012,
-          "std": 0.019
+        "allegro_recall_at_1pct_fpr": {
+          "mean": 0.8108,
+          "std": 0.0849
         },
         "allegro_share_of_1pct_fpr_catches": {
           "mean": 0.4753,
@@ -46,6 +46,14 @@
         "allegro_share_of_test_phishing": {
           "mean": 0.0842,
           "std": 0.0255
+        },
+        "recall_at_1pct_fpr_unrepeated": {
+          "mean": 0.0473,
+          "std": 0.0088
+        },
+        "repeated_share_of_test_phishing": {
+          "mean": 0.272,
+          "std": 0.0223
         }
       },
       "random_forest": {
@@ -77,13 +85,13 @@
           "mean": 0.732,
           "std": 0.0205
         },
-        "recall_allegro": {
-          "mean": 0.9568,
-          "std": 0.0447
+        "recall_at_1pct_fpr_without_allegro": {
+          "mean": 0.1031,
+          "std": 0.0233
         },
-        "recall_other_phishing": {
-          "mean": 0.528,
-          "std": 0.0156
+        "allegro_recall_at_1pct_fpr": {
+          "mean": 0.7052,
+          "std": 0.1316
         },
         "allegro_share_of_1pct_fpr_catches": {
           "mean": 0.3829,
@@ -92,6 +100,14 @@
         "allegro_share_of_test_phishing": {
           "mean": 0.0842,
           "std": 0.0255
+        },
+        "recall_at_1pct_fpr_unrepeated": {
+          "mean": 0.0524,
+          "std": 0.0174
+        },
+        "repeated_share_of_test_phishing": {
+          "mean": 0.272,
+          "std": 0.0223
         }
       },
       "char_ngram_logistic_regression": {
@@ -123,13 +139,13 @@
           "mean": 0.8079,
           "std": 0.0172
         },
-        "recall_allegro": {
-          "mean": 0.9915,
-          "std": 0.0097
+        "recall_at_1pct_fpr_without_allegro": {
+          "mean": 0.2231,
+          "std": 0.0199
         },
-        "recall_other_phishing": {
-          "mean": 0.6055,
-          "std": 0.0158
+        "allegro_recall_at_1pct_fpr": {
+          "mean": 0.9205,
+          "std": 0.0446
         },
         "allegro_share_of_1pct_fpr_catches": {
           "mean": 0.2739,
@@ -138,6 +154,68 @@
         "allegro_share_of_test_phishing": {
           "mean": 0.0842,
           "std": 0.0255
+        },
+        "recall_at_1pct_fpr_unrepeated": {
+          "mean": 0.1322,
+          "std": 0.0211
+        },
+        "repeated_share_of_test_phishing": {
+          "mean": 0.272,
+          "std": 0.0223
+        }
+      },
+      "hand_plus_suffix": {
+        "precision": {
+          "mean": 0.7196,
+          "std": 0.0149
+        },
+        "recall": {
+          "mean": 0.6232,
+          "std": 0.0134
+        },
+        "f1": {
+          "mean": 0.6678,
+          "std": 0.0106
+        },
+        "false_positive_rate": {
+          "mean": 0.2467,
+          "std": 0.0102
+        },
+        "recall_at_1pct_fpr": {
+          "mean": 0.215,
+          "std": 0.0329
+        },
+        "recall_at_5pct_fpr": {
+          "mean": 0.3589,
+          "std": 0.0212
+        },
+        "average_precision": {
+          "mean": 0.7846,
+          "std": 0.0151
+        },
+        "recall_at_1pct_fpr_without_allegro": {
+          "mean": 0.1527,
+          "std": 0.0429
+        },
+        "allegro_recall_at_1pct_fpr": {
+          "mean": 0.8837,
+          "std": 0.0451
+        },
+        "allegro_share_of_1pct_fpr_catches": {
+          "mean": 0.355,
+          "std": 0.1279
+        },
+        "allegro_share_of_test_phishing": {
+          "mean": 0.0842,
+          "std": 0.0255
+        },
+        "recall_at_1pct_fpr_unrepeated": {
+          "mean": 0.1224,
+          "std": 0.019
+        },
+        "repeated_share_of_test_phishing": {
+          "mean": 0.272,
+          "std": 0.0223
         }
       },
       "ngram_name_only": {
@@ -169,13 +247,13 @@
           "mean": 0.7612,
           "std": 0.0209
         },
-        "recall_allegro": {
-          "mean": 0.9693,
-          "std": 0.0222
+        "recall_at_1pct_fpr_without_allegro": {
+          "mean": 0.1857,
+          "std": 0.0134
         },
-        "recall_other_phishing": {
-          "mean": 0.5737,
-          "std": 0.0145
+        "allegro_recall_at_1pct_fpr": {
+          "mean": 0.815,
+          "std": 0.0648
         },
         "allegro_share_of_1pct_fpr_catches": {
           "mean": 0.2848,
@@ -184,6 +262,14 @@
         "allegro_share_of_test_phishing": {
           "mean": 0.0842,
           "std": 0.0255
+        },
+        "recall_at_1pct_fpr_unrepeated": {
+          "mean": 0.0747,
+          "std": 0.016
+        },
+        "repeated_share_of_test_phishing": {
+          "mean": 0.272,
+          "std": 0.0223
         }
       },
       "suffix_only": {
@@ -215,13 +301,13 @@
           "mean": 0.6805,
           "std": 0.0194
         },
-        "recall_allegro": {
-          "mean": 0.9888,
-          "std": 0.012
+        "recall_at_1pct_fpr_without_allegro": {
+          "mean": 0.0865,
+          "std": 0.0167
         },
-        "recall_other_phishing": {
-          "mean": 0.7859,
-          "std": 0.0169
+        "allegro_recall_at_1pct_fpr": {
+          "mean": 0.9212,
+          "std": 0.0394
         },
         "allegro_share_of_1pct_fpr_catches": {
           "mean": 0.4895,
@@ -230,6 +316,14 @@
         "allegro_share_of_test_phishing": {
           "mean": 0.0842,
           "std": 0.0255
+        },
+        "recall_at_1pct_fpr_unrepeated": {
+          "mean": 0.1317,
+          "std": 0.0174
+        },
+        "repeated_share_of_test_phishing": {
+          "mean": 0.272,
+          "std": 0.0223
         }
       }
     }
@@ -266,13 +360,13 @@
           "mean": 0.7454,
           "std": 0.0275
         },
-        "recall_allegro": {
-          "mean": 0.9791,
-          "std": 0.021
+        "recall_at_1pct_fpr_without_allegro": {
+          "mean": 0.052,
+          "std": 0.0141
         },
-        "recall_other_phishing": {
-          "mean": 0.6023,
-          "std": 0.024
+        "allegro_recall_at_1pct_fpr": {
+          "mean": 0.7674,
+          "std": 0.0535
         },
         "allegro_share_of_1pct_fpr_catches": {
           "mean": 0.5541,
@@ -281,6 +375,14 @@
         "allegro_share_of_test_phishing": {
           "mean": 0.0814,
           "std": 0.0341
+        },
+        "recall_at_1pct_fpr_unrepeated": {
+          "mean": 0.0221,
+          "std": 0.0083
+        },
+        "repeated_share_of_test_phishing": {
+          "mean": 0.3718,
+          "std": 0.0229
         }
       },
       "random_forest": {
@@ -312,21 +414,29 @@
           "mean": 0.7442,
           "std": 0.0222
         },
-        "recall_allegro": {
-          "mean": 0.9681,
-          "std": 0.0342
+        "recall_at_1pct_fpr_without_allegro": {
+          "mean": 0.0943,
+          "std": 0.0375
         },
-        "recall_other_phishing": {
-          "mean": 0.5573,
-          "std": 0.0175
+        "allegro_recall_at_1pct_fpr": {
+          "mean": 0.6157,
+          "std": 0.2393
         },
         "allegro_share_of_1pct_fpr_catches": {
-          "mean": 0.3204,
-          "std": 0.1584
+          "mean": 0.356,
+          "std": 0.1181
         },
         "allegro_share_of_test_phishing": {
           "mean": 0.0814,
           "std": 0.0341
+        },
+        "recall_at_1pct_fpr_unrepeated": {
+          "mean": 0.0188,
+          "std": 0.0078
+        },
+        "repeated_share_of_test_phishing": {
+          "mean": 0.3718,
+          "std": 0.0229
         }
       },
       "char_ngram_logistic_regression": {
@@ -358,13 +468,13 @@
           "mean": 0.8403,
           "std": 0.0171
         },
-        "recall_allegro": {
-          "mean": 0.9923,
-          "std": 0.0101
+        "recall_at_1pct_fpr_without_allegro": {
+          "mean": 0.2788,
+          "std": 0.0353
         },
-        "recall_other_phishing": {
-          "mean": 0.6479,
-          "std": 0.0148
+        "allegro_recall_at_1pct_fpr": {
+          "mean": 0.9825,
+          "std": 0.0206
         },
         "allegro_share_of_1pct_fpr_catches": {
           "mean": 0.234,
@@ -373,6 +483,68 @@
         "allegro_share_of_test_phishing": {
           "mean": 0.0814,
           "std": 0.0341
+        },
+        "recall_at_1pct_fpr_unrepeated": {
+          "mean": 0.1158,
+          "std": 0.0298
+        },
+        "repeated_share_of_test_phishing": {
+          "mean": 0.3718,
+          "std": 0.0229
+        }
+      },
+      "hand_plus_suffix": {
+        "precision": {
+          "mean": 0.7484,
+          "std": 0.0236
+        },
+        "recall": {
+          "mean": 0.6468,
+          "std": 0.017
+        },
+        "f1": {
+          "mean": 0.6938,
+          "std": 0.0173
+        },
+        "false_positive_rate": {
+          "mean": 0.2143,
+          "std": 0.0129
+        },
+        "recall_at_1pct_fpr": {
+          "mean": 0.1562,
+          "std": 0.0421
+        },
+        "recall_at_5pct_fpr": {
+          "mean": 0.3946,
+          "std": 0.0272
+        },
+        "average_precision": {
+          "mean": 0.7967,
+          "std": 0.0217
+        },
+        "recall_at_1pct_fpr_without_allegro": {
+          "mean": 0.0939,
+          "std": 0.0263
+        },
+        "allegro_recall_at_1pct_fpr": {
+          "mean": 0.8509,
+          "std": 0.0663
+        },
+        "allegro_share_of_1pct_fpr_catches": {
+          "mean": 0.4414,
+          "std": 0.1211
+        },
+        "allegro_share_of_test_phishing": {
+          "mean": 0.0814,
+          "std": 0.0341
+        },
+        "recall_at_1pct_fpr_unrepeated": {
+          "mean": 0.0661,
+          "std": 0.0225
+        },
+        "repeated_share_of_test_phishing": {
+          "mean": 0.3718,
+          "std": 0.0229
         }
       },
       "ngram_name_only": {
@@ -404,13 +576,13 @@
           "mean": 0.8053,
           "std": 0.0202
         },
-        "recall_allegro": {
-          "mean": 0.9866,
-          "std": 0.0121
+        "recall_at_1pct_fpr_without_allegro": {
+          "mean": 0.2298,
+          "std": 0.0205
         },
-        "recall_other_phishing": {
-          "mean": 0.6309,
-          "std": 0.0176
+        "allegro_recall_at_1pct_fpr": {
+          "mean": 0.981,
+          "std": 0.0166
         },
         "allegro_share_of_1pct_fpr_catches": {
           "mean": 0.2683,
@@ -419,6 +591,14 @@
         "allegro_share_of_test_phishing": {
           "mean": 0.0814,
           "std": 0.0341
+        },
+        "recall_at_1pct_fpr_unrepeated": {
+          "mean": 0.0507,
+          "std": 0.0087
+        },
+        "repeated_share_of_test_phishing": {
+          "mean": 0.3718,
+          "std": 0.0229
         }
       },
       "suffix_only": {
@@ -450,13 +630,13 @@
           "mean": 0.6878,
           "std": 0.0223
         },
-        "recall_allegro": {
-          "mean": 0.9419,
-          "std": 0.0522
+        "recall_at_1pct_fpr_without_allegro": {
+          "mean": 0.0771,
+          "std": 0.0092
         },
-        "recall_other_phishing": {
-          "mean": 0.3146,
-          "std": 0.0132
+        "allegro_recall_at_1pct_fpr": {
+          "mean": 0.8596,
+          "std": 0.0776
         },
         "allegro_share_of_1pct_fpr_catches": {
           "mean": 0.4798,
@@ -465,6 +645,14 @@
         "allegro_share_of_test_phishing": {
           "mean": 0.0814,
           "std": 0.0341
+        },
+        "recall_at_1pct_fpr_unrepeated": {
+          "mean": 0.0876,
+          "std": 0.0106
+        },
+        "repeated_share_of_test_phishing": {
+          "mean": 0.3718,
+          "std": 0.0229
         }
       }
     }

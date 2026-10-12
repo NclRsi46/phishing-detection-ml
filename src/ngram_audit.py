@@ -4,12 +4,20 @@ ngram_audit.py
 Checks where the char n-gram model's gain over the hand-built features comes
 from, over the same 10 splits as repeat_splits.py:
 
-    TLD or name   the n-gram model again on the name with the public suffix
-                  stripped, and a logistic regression on the suffix alone.
-    one kit       recall on Allegro-themed phishing vs all other phishing,
-                  and how much of each model's 1%-FPR slice is Allegro.
-                  Allegro is 8.5% of the phishing rows, mostly from a few kits
-                  that vary letters, which the campaign grouping can't merge.
+    TLD or name   the hand-built features plus the full public suffix, the
+                  n-gram model on the name with the suffix stripped, and a
+                  logistic regression on the suffix alone.
+    Allegro       recall at 1% FPR without Allegro-themed phishing, and how
+                  much of each model's 1%-FPR slice is Allegro. Allegro is
+                  8.5% of the phishing rows, mostly from a few kits that vary
+                  letters, which the campaign grouping can't merge.
+    kit wording   recall at 1% FPR on test phishing names that share no
+                  8-character substring (digit runs as "#", suffix stripped,
+                  since the TLD is checked above) with a training phishing
+                  name. Kits reuse words ("pl-oferta", "coursier") across
+                  names the campaign grouping keeps apart. The filter
+                  also drops names that share ordinary words, so this is a
+                  lower bound, not a clean measure.
 
 Allegro-themed means PhishTank's "target" column says Allegro.
 
@@ -29,14 +37,16 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GroupShuffleSplit
 from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from build_dataset import PHISHTANK_FILE
 from evaluate import recall_at_fpr
-from features import EXTRACT
+from features import EXTRACT, feature_names
 from preprocess import LEVELS, PROCESSED_DIR, TEST_SIZE, campaign_key, featurize
 from repeat_splits import N_SPLITS, RESULTS_DIR, score
 from train import make_models, model_columns
+
+SUBSTRING_LENGTH = 8
 
 
 def name_and_suffix(text: str, level: str):
@@ -52,10 +62,21 @@ def name_and_suffix(text: str, level: str):
 
 
 def audit_models(level: str) -> dict:
-    """The three models from train.py plus the two diagnostic ones, each with
-    its input columns. The name-only model has the same settings as the
-    n-gram model in train.py."""
+    """The three models from train.py plus the diagnostic ones, each with its
+    input columns. The name-only model has the same settings as the n-gram
+    model in train.py."""
+    hand = feature_names(level)
     models = {name: (model, model_columns(name, level)) for name, model in make_models(level).items()}
+    models["hand_plus_suffix"] = (
+        make_pipeline(
+            ColumnTransformer([
+                ("hand", StandardScaler(), hand),
+                ("suffix", OneHotEncoder(handle_unknown="ignore"), ["suffix"]),
+            ]),
+            LogisticRegression(max_iter=1000),
+        ),
+        hand + ["suffix"],
+    )
     models["ngram_name_only"] = (
         make_pipeline(
             ColumnTransformer([("ngrams", TfidfVectorizer(analyzer="char", ngram_range=(1, 5), min_df=2), "name")]),
@@ -83,14 +104,40 @@ def caught_at_fpr(y_true, scores, target: float):
     return caught
 
 
-def allegro_metrics(y_true, y_pred, scores, allegro) -> dict:
-    phish = y_true == 1
+def allegro_metrics(y_true, scores, allegro) -> dict:
+    # With no Allegro rows these are nan, which the mean over splits would
+    # silently skip.
+    if not allegro.any():
+        raise ValueError("no Allegro-themed rows in this test split")
     caught = caught_at_fpr(y_true, scores, 0.01)
+    other = ~allegro
     return {
-        "recall_allegro": float((y_pred[allegro] == 1).mean()),
-        "recall_other_phishing": float((y_pred[phish & ~allegro] == 1).mean()),
-        "allegro_share_of_1pct_fpr_catches": float(caught[allegro].sum() / caught.sum()) if caught.any() else 0.0,
-        "allegro_share_of_test_phishing": float(allegro.sum() / phish.sum()),
+        "recall_at_1pct_fpr_without_allegro": recall_at_fpr(y_true[other], scores[other], 0.01),
+        "allegro_recall_at_1pct_fpr": float(caught[allegro].mean()),
+        # Undefined when the model catches nothing at 1% FPR. The mean is
+        # then over the splits where it catches something.
+        "allegro_share_of_1pct_fpr_catches": float(caught[allegro].sum() / caught.sum()) if caught.any() else float("nan"),
+        "allegro_share_of_test_phishing": float(allegro.sum() / (y_true == 1).sum()),
+    }
+
+
+def substrings(name: str) -> set:
+    text = campaign_key(name)
+    return {text[i:i + SUBSTRING_LENGTH] for i in range(len(text) - SUBSTRING_LENGTH + 1)}
+
+
+def repeated_names(train_names, test_names):
+    """True for each test name that shares a substring (digit runs as "#")
+    with any of the training names."""
+    seen = set().union(*(substrings(name) for name in train_names))
+    return np.array([not substrings(name).isdisjoint(seen) for name in test_names])
+
+
+def unrepeated_metrics(y_true, scores, repeated) -> dict:
+    keep = ~repeated
+    return {
+        "recall_at_1pct_fpr_unrepeated": recall_at_fpr(y_true[keep], scores[keep], 0.01),
+        "repeated_share_of_test_phishing": float(repeated.sum() / (y_true == 1).sum()),
     }
 
 
@@ -115,6 +162,10 @@ def main():
         rows = []
         for train_idx, test_idx in splitter.split(df, y, groups=groups):
             y_test = y.iloc[test_idx].values
+            train_phishing = df["name"].iloc[train_idx][y.iloc[train_idx] == 1]
+            # Only phishing rows are dropped, so the 1% FPR threshold stays
+            # on the same benign rows.
+            repeated = repeated_names(train_phishing, df["name"].iloc[test_idx]) & (y_test == 1)
             for name, (model, columns) in audit_models(level).items():
                 X = df[columns]
                 model.fit(X.iloc[train_idx], y.iloc[train_idx])
@@ -123,7 +174,8 @@ def main():
                 rows.append({
                     "model": name,
                     **score(y_test, y_pred, scores),
-                    **allegro_metrics(y_test, y_pred, scores, allegro[test_idx]),
+                    **allegro_metrics(y_test, scores, allegro[test_idx]),
+                    **unrepeated_metrics(y_test, scores, repeated),
                 })
 
         summary = pd.DataFrame(rows).groupby("model", sort=False).agg(["mean", "std"]).round(4)
@@ -140,8 +192,8 @@ def main():
         for model, m in results[level]["models"].items():
             print(
                 f"  {model:30} AP {m['average_precision']['mean']:.3f}  R@1%FPR {m['recall_at_1pct_fpr']['mean']:.3f}  "
-                f"R@5%FPR {m['recall_at_5pct_fpr']['mean']:.3f}  recall Allegro {m['recall_allegro']['mean']:.3f}  "
-                f"recall other {m['recall_other_phishing']['mean']:.3f}  "
+                f"without Allegro {m['recall_at_1pct_fpr_without_allegro']['mean']:.3f}  "
+                f"unrepeated {m['recall_at_1pct_fpr_unrepeated']['mean']:.3f}  "
                 f"Allegro share of 1% slice {m['allegro_share_of_1pct_fpr_catches']['mean']:.3f}"
             )
 
