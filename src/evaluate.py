@@ -137,8 +137,15 @@ def main():
             continue
 
         test = pd.read_csv(test_path)
-        train_rows = len(pd.read_csv(train_path, usecols=["label"]))
-        results[level] = {"train_rows": train_rows, "test_rows": len(test), "models": {}}
+        train = pd.read_csv(train_path, usecols=["label", "is_ip"])
+        # Every IP host is in one campaign, so a split puts them all on one
+        # side, and only phishing has them.
+        results[level] = {
+            "train_rows": len(train),
+            "test_rows": len(test),
+            "ip_rows": {"train": int(train["is_ip"].sum()), "test": int(test["is_ip"].sum())},
+            "models": {},
+        }
         bundles = {name: joblib.load(os.path.join(MODEL_DIR, f"{level}_{name}.pkl")) for name in MODEL_NAMES}
 
         for name, bundle in bundles.items():
