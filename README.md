@@ -37,7 +37,7 @@ This started as a team course project for CYB201/CIT251 at Pace University (fall
 
 4. **Train** (`src/train.py`) three models for each experiment: a Logistic Regression baseline and a Random Forest on the features above, and a Logistic Regression on character n-grams of the scored name itself (TF-IDF over 1- to 5-character substrings of `paypal-login-secure.com`, suffix included). The n-gram model checks what the hand-built features miss. Its settings were fixed before the first run and not tuned.
 
-5. **Evaluate** (`src/evaluate.py`) on the held-out test split only. Reports precision, recall, F1, and false positive rate at the default 0.5 threshold, plus recall at a 1% and 5% false positive rate and average precision. Writes `results/metrics.json`, a confusion matrix per model, and a precision-recall curve per experiment. `src/repeat_splits.py` repeats the split with 10 seeds to show how much the numbers move by chance, and `src/ngram_audit.py` checks where the n-gram model's gain comes from.
+5. **Evaluate** (`src/evaluate.py`) on the held-out test split only. Reports precision, recall, F1, and false positive rate at the default 0.5 threshold, plus recall at a 1% and 5% false positive rate and average precision. Writes `results/metrics.json`, a confusion matrix per model, and a precision-recall curve per experiment. `src/repeat_splits.py` repeats the split with 10 seeds to show how much the numbers move by chance, and `src/ngram_audit.py` checks where the n-gram model's gain comes from. `src/time_split.py` splits phishing by date instead and runs the same checks.
 
 ## Results
 
@@ -93,7 +93,7 @@ The character n-gram model ranks better than all four hand-feature models. Recal
 
 - **On domains, about half of it is the TLD.** The hand features sort TLDs into four groups, so `.cfd`, `.icu`, and `.sbs` look the same to them. Adding the full suffix to the hand features takes recall at 1% FPR from 14.4% to 21.5% on domains, half of the way to the n-gram model, but only from 11.1% to 15.6% on hosts. Many of the heaviest n-grams are TLDs (at domain level, `.cfd` and `.icu` toward phishing, `.ru`, `.jp`, and `.gov` toward benign; `results/metrics.json`). TLD abuse moves fast, so that part is the most likely to decay.
 - **Not just Allegro.** Without the Allegro-themed rows, the n-gram model still gets 22.3% at 1% FPR on domains against 8.2 to 10.3% for the hand-feature models, and 27.9% against 5.2 to 9.4% on hosts.
-- **Much of the rest is kit wording that repeats across the split.** Kits reuse words (`pl-oferta`, `coursier`, `-pickup-`) across names the campaign grouping keeps apart. 27% of the domain and 37% of the host test phishing names share an 8-character substring with a training phishing name (digit runs as `#`, suffix stripped). Without those rows, recall at 1% FPR drops for every model: the hand-feature models get 1.9 to 5.2%, and the n-gram model 13.2% on domains and 11.6% on hosts. On those domains it does no better than the suffix alone (13.2%) or the hand features plus the suffix (12.2%). On hosts it keeps a lead (11.6% against 8.8% and 6.6%). The filter also drops names that only share ordinary words, so these numbers likely understate how the models do on new names. It also can't flag a name shorter than 8 characters once digits are collapsed, so a few short kit copies stay in. Kits do get reused, so repeated wording is a real signal, but a random split can't say how long it keeps working; a time-based split could.
+- **Much of the rest is kit wording that repeats across the split.** Kits reuse words (`pl-oferta`, `coursier`, `-pickup-`) across names the campaign grouping keeps apart. 27% of the domain and 37% of the host test phishing names share an 8-character substring with a training phishing name (digit runs as `#`, suffix stripped). Without those rows, recall at 1% FPR drops for every model: the hand-feature models get 1.9 to 5.2%, and the n-gram model 13.2% on domains and 11.6% on hosts. On those domains it does no better than the suffix alone (13.2%) or the hand features plus the suffix (12.2%). On hosts it keeps a lead (11.6% against 8.8% and 6.6%). The filter also drops names that only share ordinary words, so these numbers likely understate how the models do on new names. It also can't flag a name shorter than 8 characters once digits are collapsed, so a few short kit copies stay in. Kits do get reused, so repeated wording is a real signal, but a random split can't say how long it keeps working. The time-based split below is a first look, over two weeks.
 - **The known artifacts show up.** `.1`, from IP hosts that only phishing has, weighs toward phishing, and on hosts `cdn` and `api`, from Umbrella's infrastructure hostnames, weigh toward benign.
 
 <p>
@@ -107,6 +107,39 @@ The character n-gram model ranks better than all four hand-feature models. Recal
 </p>
 
 `src/sanity_check.py` scores a fixed list of real and made-up URLs. Real legitimate domains it scores high: `en.wikipedia.org` (0.63 on the domain model) and `login.microsoftonline.com` (0.53, pushed up because "microsoft" appears in a domain that isn't `microsoft.com`). The made-up phishing URLs all score high, but they were written to look like phishing, so they say little about recall. The test-set numbers above are the honest ones.
+
+### Time-based split
+
+`src/time_split.py` splits phishing by date instead of at random (`results/time_split.json`). A phishing domain's date is its earliest PhishTank submission, and a campaign (grouped as above) starts at its earliest domain. Campaigns that started on or after the cut go to test, the rest to training. The cut is the 80th percentile of campaign start times, chosen before any model was trained on this split, and falls on 17 November 2025. That puts 4,014 phishing domains in training and 1,001 in test, all first submitted between 17 November and 1 December 2025. 12 campaigns started before the cut and went on after it; they stay in training, with their 97 later domains. The two experiments have the same 5,015 phishing registered domains, so the phishing split is the same at both levels. Tranco and Umbrella have no dates, so benign rows are split at random as before, over 10 seeds. The phishing side is the same in all 10 runs, so the ± only shows how much the benign sample moves the numbers.
+
+Mean over the 10 runs, with the random split's mean from the tables above in parentheses:
+
+| Experiment | Model | Recall at 1% FPR | Recall at 5% FPR | Average precision |
+|---|---|---|---|---|
+| domain (Tranco) | Logistic Regression | 16.3% ± 2.4 (14.4%) | 32.8% ± 0.6 (30.7%) | 74.8% ± 0.4 (73.9%) |
+| domain (Tranco) | Random Forest | 11.5% ± 3.1 (15.4%) | 29.4% ± 1.1 (29.5%) | 72.7% ± 0.6 (73.2%) |
+| domain (Tranco) | Char n-gram Logistic Regression | 34.3% ± 2.5 (28.2%) | 44.9% ± 1.3 (39.9%) | 82.7% ± 0.5 (80.8%) |
+| host (Umbrella) | Logistic Regression | 11.7% ± 0.9 (11.1%) | 31.2% ± 1.3 (28.2%) | 77.3% ± 0.3 (74.5%) |
+| host (Umbrella) | Random Forest | 12.8% ± 1.5 (13.6%) | 28.2% ± 1.0 (29.9%) | 73.3% ± 0.6 (74.4%) |
+| host (Umbrella) | Char n-gram Logistic Regression | 39.6% ± 2.4 (33.6%) | 53.5% ± 1.3 (46.2%) | 87.4% ± 0.3 (84.0%) |
+
+At 0.5 the false positive rate is 23 to 28%, against 21 to 26% on the random split.
+
+The hand-feature models land within 4 points of the random split, and the n-gram model does better. That isn't the n-gram model learning something about names that holds up over time. The newer phishing is on different TLDs. Shares of the registrable suffix at domain level:
+
+| Suffix | Training phishing | Test phishing | Benign (Tranco) |
+|---|---|---|---|
+| `.com` | 50.5% | 26.4% | 41.7% |
+| `.cn` | 4.4% | 17.1% | 5.9% |
+| `.cfd` | 2.3% | 9.3% | 0.0% |
+| `.icu` | 1.5% | 5.7% | 0.1% |
+| `.sbs` | 1.2% | 4.9% | 0.0% |
+| `.lat` | 0.1% | 4.2% | 0.0% |
+
+- **The suffix alone does as well as anything on new names.** A logistic regression on the suffix alone goes from 15.7% recall at 1% FPR on the random split to 26.6% here on domains, and from 14.2% to 28.3% on hosts. On test names that share no kit wording with training (the 8-character filter above), it gets 26.6% on domains and 22.2% on hosts, against 24.0% and 18.6% for the n-gram model, 21.8% and 11.2% for the hand features plus the full suffix, and 1.7 to 8.0% for the hand-feature models.
+- **More Allegro, less repeated kit wording.** Allegro is 13.2% of the test phishing here, against about 8% in the random test sets. Without the Allegro rows the n-gram model gets 27.6% on domains and 30.4% on hosts. 20% of the domain and 34% of the host test phishing names share an 8-character substring with a training phishing name, against 27% and 37% on the random split.
+
+So over two weeks the models don't get worse, but what carries the n-gram model forward is mostly the suffix: the newest phishing in this snapshot sits on a few cheap TLDs that are rare or absent in Tranco, and any model that sees the full suffix picks that up. TLD abuse moves fast, so this is the part least likely to last. Two things make this a weak test of time. The test window is two weeks. And `verified_online.csv` only lists phishing that was still online in December 2025, so the training side is older phishing that stayed up (30% of it first submitted before 2025), and the gap between training and test is partly long-lived against fresh phishing, not only older against newer.
 
 ## What I got wrong the first time
 
@@ -153,6 +186,7 @@ The lesson: when two classes come from different sources, check every column for
 - **Benign means popular.** Tranco and Umbrella are popularity lists. The model partly learns "popular vs obscure," and Umbrella also includes CDN and API hostnames that don't look like sites people visit.
 - **`is_ip` only appears in phishing.** Neither benign list has IP hosts, so the model treats any IP as phishing.
 - **The data snapshots are 10 months apart.** PhishTank is from December 2025 and Umbrella from October 2026. Naming and TLD trends that shifted in between can look like a phishing signal, and Umbrella's overlap with these phishing domains is understated because most of them stopped getting DNS traffic long before the Umbrella snapshot.
+- **Only phishing that stayed online.** `verified_online.csv` lists phishing still online in December 2025. Older rows are the ones that stayed up, which is not a random sample of the phishing from their time.
 - **Lexical models decay.** Attackers change naming patterns and TLDs, and a model trained on one snapshot gets worse over time.
 - **Small dataset.** About 10,000 rows per experiment after deduplication.
 
@@ -183,6 +217,7 @@ python src/train.py
 python src/evaluate.py
 python src/repeat_splits.py
 python src/ngram_audit.py
+python src/time_split.py
 python src/sanity_check.py
 python tests/test_features.py
 python tests/test_split.py
@@ -190,6 +225,7 @@ python tests/test_metrics.py
 python tests/test_train.py
 python tests/test_predict.py
 python tests/test_audit.py
+python tests/test_time_split.py
 ```
 
 Score a single URL with the domain-level Random Forest:
@@ -219,6 +255,7 @@ phishing-detection-ml/
 │   ├── metrics.json
 │   ├── repeated_splits.json
 │   ├── ngram_audit.json
+│   ├── time_split.json
 │   ├── confusion_*.png
 │   ├── pr_curve_*.png
 │   └── original_run.txt
@@ -231,6 +268,7 @@ phishing-detection-ml/
 │   ├── predict.py
 │   ├── repeat_splits.py
 │   ├── ngram_audit.py
+│   ├── time_split.py
 │   └── sanity_check.py
 ├── tests/
 │   ├── test_features.py
@@ -238,6 +276,7 @@ phishing-detection-ml/
 │   ├── test_metrics.py
 │   ├── test_train.py
 │   ├── test_predict.py
-│   └── test_audit.py
+│   ├── test_audit.py
+│   └── test_time_split.py
 └── requirements.txt
 ```
