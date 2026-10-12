@@ -16,8 +16,8 @@ from, over the same 10 splits as repeat_splits.py:
                   since the TLD is checked above) with a training phishing
                   name. Kits reuse words ("pl-oferta", "coursier") across
                   names the campaign grouping keeps apart. The filter
-                  also drops names that share ordinary words, so this is a
-                  lower bound, not a clean measure.
+                  also drops names that share ordinary words, so this likely
+                  understates recall on new names; it isn't a clean measure.
 
 Allegro-themed means PhishTank's "target" column says Allegro.
 
