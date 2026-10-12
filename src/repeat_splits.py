@@ -4,6 +4,12 @@ repeat_splits.py
 The metrics in evaluate.py come from one train/test split. This repeats the
 same campaign-grouped split with 10 different seeds and reports the mean and
 standard deviation, to show how much one split's numbers can move by chance.
+ngram_audit.py and grouping_audit.py use the same 10 splits.
+
+Recall at 1% FPR moves the most between splits, so each split's value is kept
+too, with the number of benign and phishing rows tied at the model's highest
+score. When more benign rows tie there than 1% FPR allows, no threshold can
+take any of them and that split's recall at 1% FPR is 0.
 
 Writes results/repeated_splits.json.
 
@@ -14,6 +20,7 @@ Usage:
 import json
 import os
 
+import numpy as np
 import pandas as pd
 from sklearn.metrics import average_precision_score, confusion_matrix, f1_score, precision_score, recall_score
 from sklearn.model_selection import GroupShuffleSplit
@@ -39,6 +46,20 @@ def score(y_true, y_pred, scores) -> dict:
     }
 
 
+def random_splits(df: pd.DataFrame, key=campaign_group):
+    """The 10 campaign-grouped (train_idx, test_idx) splits."""
+    groups = df["domain"].map(key)
+    splitter = GroupShuffleSplit(n_splits=N_SPLITS, test_size=TEST_SIZE, random_state=0)
+    return splitter.split(df, df["label"], groups=groups)
+
+
+def top_tie(y_true, scores) -> dict:
+    """Benign and phishing rows tied at the highest score."""
+    y_true, scores = np.asarray(y_true), np.asarray(scores)
+    top = scores == scores.max()
+    return {"benign": int((top & (y_true == 0)).sum()), "phishing": int((top & (y_true == 1)).sum())}
+
+
 def main():
     results = {}
 
@@ -50,28 +71,35 @@ def main():
 
         df = featurize(pd.read_csv(path), level)
         y = df["label"]
-        groups = df["domain"].map(campaign_group)
-        splitter = GroupShuffleSplit(n_splits=N_SPLITS, test_size=TEST_SIZE, random_state=0)
 
         rows = []
-        for train_idx, test_idx in splitter.split(df, y, groups=groups):
+        for train_idx, test_idx in random_splits(df):
             for name, model in make_models(level).items():
                 X = df[model_columns(name, level)]
                 model.fit(X.iloc[train_idx], y.iloc[train_idx])
                 X_test = X.iloc[test_idx]
-                metrics = score(y.iloc[test_idx], model.predict(X_test), model.predict_proba(X_test)[:, 1])
-                rows.append({"model": name, **metrics})
+                scores = model.predict_proba(X_test)[:, 1]
+                metrics = score(y.iloc[test_idx], model.predict(X_test), scores)
+                tie = top_tie(y.iloc[test_idx], scores)
+                rows.append({"model": name, **metrics, "top_tie_benign": tie["benign"], "top_tie_phishing": tie["phishing"]})
 
-        summary = pd.DataFrame(rows).groupby("model").agg(["mean", "std"]).round(4)
+        rows = pd.DataFrame(rows)
+        summary = rows.groupby("model").agg(["mean", "std"]).round(4)
         results[level] = {
-            model: {metric: {"mean": summary.loc[model, (metric, "mean")], "std": summary.loc[model, (metric, "std")]}
-                    for metric in METRICS}
+            model: {
+                **{metric: {"mean": summary.loc[model, (metric, "mean")], "std": summary.loc[model, (metric, "std")]}
+                   for metric in METRICS},
+                "per_split": {
+                    column: [round(float(v), 4) for v in rows.loc[rows["model"] == model, column]]
+                    for column in ("recall_at_1pct_fpr", "top_tie_benign", "top_tie_phishing")
+                },
+            }
             for model in make_models(level)
         }
 
         print(f"== {level}: mean (std) over {N_SPLITS} splits ==")
         for model, metrics in results[level].items():
-            cells = "  ".join(f"{m} {v['mean']:.3f} ({v['std']:.3f})" for m, v in metrics.items())
+            cells = "  ".join(f"{m} {metrics[m]['mean']:.3f} ({metrics[m]['std']:.3f})" for m in METRICS)
             print(f"  {model:30} {cells}")
 
     os.makedirs(RESULTS_DIR, exist_ok=True)

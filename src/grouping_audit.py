@@ -27,10 +27,9 @@ import os
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import GroupShuffleSplit
 
-from preprocess import LEVELS, PROCESSED_DIR, TEST_SIZE, campaign_group, campaign_key
-from repeat_splits import N_SPLITS, RESULTS_DIR
+from preprocess import LEVELS, PROCESSED_DIR, campaign_group, campaign_key
+from repeat_splits import RESULTS_DIR, random_splits
 
 LARGEST = 5
 
@@ -82,8 +81,7 @@ def audit(df: pd.DataFrame) -> dict:
     labels = df["label"]
     old = df["domain"].map(campaign_key)
     new = df["domain"].map(campaign_group)
-    splitter = GroupShuffleSplit(n_splits=N_SPLITS, test_size=TEST_SIZE, random_state=0)
-    shares = tld_sibling_share(labels, new, splitter.split(df, labels, groups=old))
+    shares = tld_sibling_share(labels, new, random_splits(df, key=campaign_key))
     return {
         "groups": {"with_suffix": int(old.nunique()), "without_suffix": int(new.nunique())},
         "merged": merged(labels, old, new),

@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import pandas as pd
 
 from preprocess import campaign_group, campaign_key, split_by_campaign
+from repeat_splits import N_SPLITS, random_splits
 
 
 def test_campaign_key_merges_numbered_kit_domains():
@@ -59,16 +60,37 @@ def test_campaign_group_keeps_different_names_apart():
     assert campaign_group("example.com") == "example"
 
 
-def test_split_keeps_tld_variants_together():
+def tld_variant_df() -> pd.DataFrame:
     # Forty TLDs, so a split that kept them as separate campaigns would
     # almost surely put some on each side.
     suffixes = "sbs cfd icu shop xyz top lat rest click bond de fr it es nl be at ch se no dk fi cz sk hu ro bg gr pt ie lt lv ee si hr rs ua ru by kz".split()
     domains = [f"pl-oferta{i}.{suffixes[i % 40]}" for i in range(80)] + [f"site{c}.com" for c in "abcdefghijklmnopqrstuvwxyz"]
-    df = pd.DataFrame({"domain": domains, "label": [1] * 80 + [0] * 26})
+    return pd.DataFrame({"domain": domains, "label": [1] * 80 + [0] * 26})
+
+
+def test_split_keeps_tld_variants_together():
+    df = tld_variant_df()
     train, test = split_by_campaign(df)
     assert not set(train["domain"].map(campaign_group)) & set(test["domain"].map(campaign_group))
     kit_in_test = test["domain"].str.startswith("pl-oferta").sum()
     assert kit_in_test in (0, 80), kit_in_test
+
+
+def test_random_splits_keep_tld_variants_together():
+    df = tld_variant_df()
+    kit = df["domain"].str.startswith("pl-oferta").to_numpy()
+    splits = list(random_splits(df))
+    assert len(splits) == N_SPLITS
+    for _, test_idx in splits:
+        assert kit[test_idx].sum() in (0, 80)
+
+
+def test_random_splits_use_the_given_key():
+    # grouping_audit.py passes the old key to get the old splits, which do
+    # split the kit.
+    df = tld_variant_df()
+    kit = df["domain"].str.startswith("pl-oferta").to_numpy()
+    assert any(0 < kit[test_idx].sum() < 80 for _, test_idx in random_splits(df, key=campaign_key))
 
 
 if __name__ == "__main__":
