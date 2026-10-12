@@ -39,15 +39,14 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import GroupShuffleSplit
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from build_dataset import PHISHTANK_FILE
 from evaluate import recall_at_fpr
 from features import EXTRACT, feature_names
-from preprocess import LEVELS, PROCESSED_DIR, TEST_SIZE, campaign_key, featurize
-from repeat_splits import N_SPLITS, RESULTS_DIR, score
+from preprocess import LEVELS, PROCESSED_DIR, campaign_key, featurize
+from repeat_splits import N_SPLITS, RESULTS_DIR, random_splits, score
 from train import make_models, model_columns
 
 SUBSTRING_LENGTH = 8
@@ -196,11 +195,9 @@ def main():
         raw = pd.read_csv(path)
         df = with_name_and_suffix(featurize(raw, level), level)
         allegro = (raw["url"].map(targets) == "Allegro").values
-        groups = df["domain"].map(campaign_key)
-        splitter = GroupShuffleSplit(n_splits=N_SPLITS, test_size=TEST_SIZE, random_state=0)
         results[level] = {
             "allegro_phishing_rows": int(allegro.sum()),
-            "models": audit_splits(df, allegro, splitter.split(df, df["label"], groups=groups), level),
+            "models": audit_splits(df, allegro, random_splits(df), level),
         }
 
         print(f"== {level}: mean over {N_SPLITS} splits ({allegro.sum()} Allegro-themed phishing rows) ==")

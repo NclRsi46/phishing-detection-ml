@@ -1,0 +1,146 @@
+{
+  "domain": {
+    "groups": {
+      "with_suffix": 9694,
+      "without_suffix": 9557
+    },
+    "merged": {
+      "groups": 91,
+      "old_groups": 228,
+      "phishing_rows": 403,
+      "benign_rows": 82
+    },
+    "largest_group_rows": {
+      "with_suffix": 33,
+      "without_suffix": 126
+    },
+    "largest_without_suffix": {
+      "pl-oferta#": {
+        "rows": 126,
+        "phishing_rows": 126,
+        "old_groups": 10
+      },
+      "#": {
+        "rows": 54,
+        "phishing_rows": 33,
+        "old_groups": 20
+      },
+      "pl-#": {
+        "rows": 53,
+        "phishing_rows": 53,
+        "old_groups": 5
+      },
+      "#.#.#.#": {
+        "rows": 32,
+        "phishing_rows": 32,
+        "old_groups": 1
+      },
+      "pl-kategorie#": {
+        "rows": 18,
+        "phishing_rows": 18,
+        "old_groups": 2
+      }
+    },
+    "mixed_label": {
+      "with_suffix": {
+        "groups": 2,
+        "rows": 10,
+        "keys": [
+          "#.com",
+          "#.xyz"
+        ]
+      },
+      "without_suffix": {
+        "groups": 10,
+        "rows": 73,
+        "keys": [
+          "#",
+          "bio",
+          "d#",
+          "getapps",
+          "i#",
+          "imi",
+          "mb#",
+          "p#",
+          "sc",
+          "unidos"
+        ]
+      }
+    },
+    "tld_sibling_share_of_test_phishing": {
+      "mean": 0.0736,
+      "min": 0.0365,
+      "max": 0.1154
+    }
+  },
+  "host": {
+    "groups": {
+      "with_suffix": 9681,
+      "without_suffix": 9532
+    },
+    "merged": {
+      "groups": 101,
+      "old_groups": 250,
+      "phishing_rows": 399,
+      "benign_rows": 119
+    },
+    "largest_group_rows": {
+      "with_suffix": 33,
+      "without_suffix": 126
+    },
+    "largest_without_suffix": {
+      "pl-oferta#": {
+        "rows": 126,
+        "phishing_rows": 126,
+        "old_groups": 10
+      },
+      "#": {
+        "rows": 63,
+        "phishing_rows": 33,
+        "old_groups": 21
+      },
+      "pl-#": {
+        "rows": 53,
+        "phishing_rows": 53,
+        "old_groups": 5
+      },
+      "#.#.#.#": {
+        "rows": 32,
+        "phishing_rows": 32,
+        "old_groups": 1
+      },
+      "pl-kategorie#": {
+        "rows": 18,
+        "phishing_rows": 18,
+        "old_groups": 2
+      }
+    },
+    "mixed_label": {
+      "with_suffix": {
+        "groups": 2,
+        "rows": 17,
+        "keys": [
+          "#.com",
+          "#.xyz"
+        ]
+      },
+      "without_suffix": {
+        "groups": 6,
+        "rows": 76,
+        "keys": [
+          "#",
+          "d#",
+          "lp",
+          "mtr",
+          "sfr",
+          "url"
+        ]
+      }
+    },
+    "tld_sibling_share_of_test_phishing": {
+      "mean": 0.0711,
+      "min": 0.027,
+      "max": 0.1436
+    }
+  }
+}

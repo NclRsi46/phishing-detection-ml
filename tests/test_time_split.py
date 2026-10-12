@@ -12,7 +12,7 @@ import math
 
 import pandas as pd
 
-from preprocess import campaign_key
+from preprocess import campaign_group
 from time_split import TEST_SIZE, campaign_starts, first_seen_by_domain, time_cut, time_splits
 
 
@@ -48,10 +48,10 @@ def test_first_seen_is_the_earliest_submission():
 
 def test_campaign_start_is_the_earliest_phishing_row():
     starts = campaign_starts(make_df())
-    assert starts[campaign_key("kit11.sbs")] == day(1)
-    assert starts[campaign_key("shared.net")] == day(9)
+    assert starts[campaign_group("kit11.sbs")] == day(1)
+    assert starts[campaign_group("shared.net")] == day(9)
     # Benign-only campaigns have no start.
-    assert campaign_key("benigna.org") not in starts.index
+    assert campaign_group("benigna.org") not in starts.index
 
 
 def test_cut_is_the_80th_percentile_of_campaign_starts():
@@ -73,7 +73,7 @@ def test_campaign_starting_on_the_cut_goes_to_test():
 
 def test_splits_never_share_a_campaign():
     df = make_df()
-    groups = df["domain"].map(campaign_key)
+    groups = df["domain"].map(campaign_group)
     for train_idx, test_idx in time_splits(df, n_splits=5):
         assert not set(groups.iloc[train_idx]) & set(groups.iloc[test_idx])
         assert len(train_idx) + len(test_idx) == len(df)
@@ -83,7 +83,7 @@ def test_test_phishing_starts_on_or_after_the_cut():
     df = make_df()
     starts = campaign_starts(df)
     cut = time_cut(starts)
-    start = df["domain"].map(campaign_key).map(starts)
+    start = df["domain"].map(campaign_group).map(starts)
     for train_idx, test_idx in time_splits(df, n_splits=5):
         test_phish = df.iloc[test_idx]["label"] == 1
         train_phish = df.iloc[train_idx]["label"] == 1
@@ -98,6 +98,18 @@ def test_straddling_campaign_goes_to_train():
     kit = df.index[df["domain"].str.startswith("kit")]
     for train_idx, _ in time_splits(df, n_splits=5):
         assert set(kit) <= set(train_idx)
+
+
+def test_tld_variant_of_an_early_campaign_goes_to_train():
+    # brt-euit.bond is first seen after the cut, but the same name under
+    # another TLD started before it.
+    rows = [(f"phish{c}.com", 1, day(i)) for i, c in enumerate("abcdefghij")]
+    rows += [("brt-euit.qpon", 1, day(1)), ("brt-euit.bond", 1, day(9))]
+    rows += [(f"benign{c}.org", 0, pd.NaT) for c in "abcdefghij"]
+    df = pd.DataFrame(rows, columns=["domain", "label", "first_seen"])
+    variants = set(df.index[df["domain"].str.startswith("brt-euit")])
+    for train_idx, _ in time_splits(df, n_splits=3):
+        assert variants <= set(train_idx)
 
 
 def test_benign_row_follows_its_campaigns_phishing_time():
@@ -116,7 +128,7 @@ def test_benign_row_of_an_early_campaign_stays_in_train():
 
 def test_benign_only_campaigns_split_by_test_size():
     df = make_df()
-    groups = df["domain"].map(campaign_key)
+    groups = df["domain"].map(campaign_group)
     benign_only = groups[~groups.isin(campaign_starts(df).index)]
     n = benign_only.nunique()
     for _, test_idx in time_splits(df, n_splits=5):
